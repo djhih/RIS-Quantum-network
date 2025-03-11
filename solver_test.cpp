@@ -25,13 +25,13 @@ const int K = 3; // # RIS
 const int I = 5; // # GS
 double w[I] = {1.2, 0.8, 1.5, 1.0, 0.9}; // weight
 double R[I][K] = {{10, 12, 15}, {8, 9, 11}, {14, 13, 16}, {11, 10, 14}, {9, 8, 10}}; 
-double R_max[I] = {0};
-double F_th[I] = {1, 1, 1, 1, 1};  // f[i][j]: Fidelity for the commection. (user i, RIS j and BS)
+double R_max[I] = {10, 10, 10, 10, 10};
+double F_th[I] = {0, 0, 0, 0, 0};  // f[i][j]: Fidelity for the commection. (user i, RIS j and BS)
 double F[I][K];
-double lambda[I][K];
+double lambda[I][K] = {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
 int m_k[K] = {2, 3, 2}; // capacity limit for RIS
-
-double solveRelaxedProblem(vector<vector<double>>& x) {
+double x[100][100];
+double solveRelaxedProblem() {
     try {
         GRBEnv env = GRBEnv(true);
         env.start();
@@ -44,6 +44,7 @@ double solveRelaxedProblem(vector<vector<double>>& x) {
                 x_vars[i][k] = model.addVar(0.0, 1.0, 0.0, GRB_CONTINUOUS);
             }
         }
+        
 
         // set obj (z)
         GRBLinExpr objective = 0;
@@ -53,7 +54,6 @@ double solveRelaxedProblem(vector<vector<double>>& x) {
             }
         }
         model.setObjective(objective, GRB_MAXIMIZE);
-
         // constraint 1: x_{ik} R(i,k) <= R_{max,i}
         for (int i = 0; i < I; ++i) {
             for (int k = 0; k < K; ++k) {
@@ -80,21 +80,26 @@ double solveRelaxedProblem(vector<vector<double>>& x) {
         }
 
         model.optimize();
-
-        // get solution
+        
         double obj_value = model.get(GRB_DoubleAttr_ObjVal);
+        
+        
+        // get solution
         for (int i = 0; i < I; ++i) {
+            cout << "res " << (0<K) << '\n';
             for (int k = 0; k < K; ++k) {
                 x[i][k] = x_vars[i][k].get(GRB_DoubleAttr_X);
+                cout << "x " << i << " k " << k << ' ' << x[i][k] << '\n';
             }
         }
 
+        cout << "obj val: " << obj_value << '\n';
         // check constraint 1
 
         // check constraint 2
         
         // check constraint 3
-
+       
         return obj_value;
 
     } catch (GRBException e) {
@@ -104,5 +109,10 @@ double solveRelaxedProblem(vector<vector<double>>& x) {
 }
 
 int main(){
-    
+    for(int i=0; i<I; i++){
+        for(int k=0; k<K; k++){
+            F[i][k] = 1;
+        }
+    }
+    solveRelaxedProblem();
 }
