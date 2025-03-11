@@ -1,3 +1,7 @@
+/*
+    3/13 need to fix \sum^I \sum^K and set lambda
+*/
+
 #include<iostream>
 #include<vector>
 #include"gurobi_c++.h"
