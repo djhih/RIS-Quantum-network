@@ -32,7 +32,7 @@ double g_path(vector<int>& x){
 }
 
 void path_selection_problem(){
-	for(int i=0; i<L; i++){ 								// loop L times
+	for(int i = 0; i < L; i++){ 								// loop L times
 		path_solver(lamda[i]);								// upd x[i][], z_val[i], where x is a 2-D array
 		g[i] = g_path(x); 										// x generate by lamda_i, g is a number?
 		z_ub[i] = min(z_ub[i-1], z_val[i]); 	//? we should decrease upper-bound
@@ -66,7 +66,7 @@ double g_rate(vecot<int>& Rin){
 }
 
 void gereation_rate_problem(){
-	for(int i=0; i<L; i++){ 								// loop L times
+	for(int i = 0; i < L; i++){ 								// loop L times
 		rate_solver(lamda2[i]);								// upd rin, z_val2
 		g2[i] = g_rate(x); 										// x generate by lamda_i, g is a number?
 		z_ub2[i] = min(z_ub2[i-1], z_val2[i]); 	//? we should decrease upper-bound
