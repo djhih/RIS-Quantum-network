@@ -20,11 +20,12 @@ using namespace std;
 const int K = 3; // # RIS
 const int I = 5; // # GS
 double w[I] = {1.2, 0.8, 1.5, 1.0, 0.9}; // weight
-double r[I][K] = {{10, 12, 15}, {8, 9, 11}, {14, 13, 16}, {11, 10, 14}, {9, 8, 10}}; 
-double r_max[I] = {0};
-double fid_threshold[I] = {1, 1, 1, 1, 1};  // f[i][j]: Fidelity for the commection. (user i, RIS j and BS)
-double f[I][K];
-int m[K] = {2, 3, 2}; // capacity limit for RIS
+double R[I][K] = {{10, 12, 15}, {8, 9, 11}, {14, 13, 16}, {11, 10, 14}, {9, 8, 10}}; 
+double R_max[I] = {0};
+double F_th[I] = {1, 1, 1, 1, 1};  // f[i][j]: Fidelity for the commection. (user i, RIS j and BS)
+double F[I][K];
+double lambda[I][K];
+int m_k[K] = {2, 3, 2}; // capacity limit for RIS
 
 double solveRelaxedProblem(vector<vector<double>>& x) {
     try {
