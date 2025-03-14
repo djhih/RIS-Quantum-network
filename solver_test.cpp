@@ -31,6 +31,8 @@ double F[I][K];
 double lambda[I][K] = {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
 int m_k[K] = {2, 3, 2}; // capacity limit for RIS
 double x[100][100];
+
+
 double solveRelaxedProblem() {
     try {
         GRBEnv env = GRBEnv(true);

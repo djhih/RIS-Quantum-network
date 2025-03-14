@@ -2,8 +2,8 @@
 
 # 檢查是否提供檔案名稱
 if [ $# -lt 1 ]; then
-    echo "❌ 錯誤：請提供 C++ 檔案名稱！"
-    echo "📌 用法: ./run_solver.sh <source_file.cpp>"
+    echo "錯誤：請提供 C++ 檔案名稱！"
+    echo "用法: ./run_solver.sh <source_file.cpp>"
     exit 1
 fi
 
@@ -12,7 +12,7 @@ SOURCE_FILE="$1"
 
 # 確保檔案存在
 if [ ! -f "$SOURCE_FILE" ]; then
-    echo "❌ 錯誤：檔案 '$SOURCE_FILE' 不存在！"
+    echo "錯誤：檔案 '$SOURCE_FILE' 不存在！"
     exit 1
 fi
 
@@ -40,9 +40,9 @@ $CXX $CXXFLAGS -I $INCLUDE_PATH $SOURCE_FILE -o $OUTPUT_FILE -L $LIB_PATH $LIBS
 
 # 檢查編譯是否成功
 if [ $? -eq 0 ]; then
-    echo "✅ 編譯成功，執行 Solver..."
+    echo "編譯成功，執行 Solver..."
     ./$OUTPUT_FILE  # 執行 Solver
 else
-    echo "❌ 編譯失敗，請檢查錯誤訊息！"
+    echo "編譯失敗，請檢查錯誤訊息！"
     exit 1
 fi

@@ -1,5 +1,10 @@
 #include<bits/stdc++.h>
+#include<cmath>
 using namespace std;
+
+
+const double fid_parameter_beta = 0.0044; 
+const double pro_parameter_alpha = 0.0002;
 
 void Input(){
 	// L: # of iterations
@@ -31,7 +36,78 @@ double g_path(vector<int>& x){
 	return fid[th][i] - f_func(i, k) * x[i][k];
 }
 
+
+/*
+* simple entangle fidelity function 
+* formula : 1/2 + e^(-beta*distance)/2
+*/
+double entangle_fid(double distance){
+	return 0.5+0.5*exp(-fid_parameter_beta*distance)/2 ;
+}
+
+/*
+* simple entangle probability function
+* formula : e^(-alpha*distance)
+*/
+double entangle_pro(double distance){
+	return exp(-pro_parameter_alpha*distance);
+}
+
+/*
+* number of pumpping for user i => n_i  
+* formula : n_i >= (ln(F_th/(1-F_th))/ln(F_e/(1-F_e)))-1
+*/
+double number_of_pumping(double threshold , double fid){
+	return ceil((log(threshold/(1-threshold))/log(fid/(1-fid)))-1);
+}
+
+/*
+* purification of fidelity 
+* formula : f1*f2/(f1*f2+(1-f1)*(1-f2))
+*/
+double purification_fid(double f1 , double f2){
+	return f1*f2/(f1*f2+(1-f1)*(1-f2));
+}
+
+/*
+* purification of probability 
+* formula : f1*f2+(1-f1)*(1-f2)
+*/
+double purification_pro(double f1 , double f2){
+	return f1*f2+(1-f1)*(1-f2);
+}
+
+/*
+* pumping of fidelity 
+* formula : f1*f2+(1-f1)*(1-f2)
+*/
+double pumping_fid(int distance, int n){
+
+	if(n>1){
+		return purification_fid(pumping_fid(distance, n-1),entangle_fid(distance));
+	}else{
+		return entangle_fid(distance);
+	}
+
+}
+
+
+/*
+* pumping of probability
+*
+*/
+double pumping_pro(int distance, int n){
+
+	if(n>1){
+		return purification_pro(pumping_fid(distance, n-1),entangle_fid(distance))*entangle_pro(distance)*pumping_pro(distance, n-1);
+	}else{
+		return entangle_pro(distance);
+	}
+}
+
+
 void path_selection_problem(){
+	
 	for(int i = 0; i < L; i++){ 								// loop L times
 		path_solver(lamda[i]);								// upd x[i][], z_val[i], where x is a 2-D array
 		g[i] = g_path(x); 										// x generate by lamda_i, g is a number?
