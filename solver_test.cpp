@@ -52,14 +52,7 @@ double solveRelaxedProblem() {
         GRBLinExpr objective = 0;
         for (int i = 0; i < I; ++i) {
             for (int k = 0; k < K; ++k) {
-                objective += x_vars[i][k] * w[i] * R[i][k] + lambda[i][k] * (F_th[i] - F[i][k] * x_vars[i][k]);
-            }
-        }
-        model.setObjective(objective, GRB_MAXIMIZE);
-        // constraint 1: x_{ik} R(i,k) <= R_{max,i}
-        for (int i = 0; i < I; ++i) {
-            for (int k = 0; k < K; ++k) {
-                model.addConstr(x_vars[i][k] * R[i][k] <= R_max[i]);
+                objective += x_vars[i][k] * w[i] * R[i][k] + lambda[i][k] * x_vars[i][k] * R[i][k] - R_max[i];
             }
         }
 
