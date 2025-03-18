@@ -4,7 +4,6 @@
 
 #include<iostream>
 #include<vector>
-#include <fstream>
 #include"gurobi_c++.h"
 using namespace std;
 
@@ -48,16 +47,23 @@ double solveRelaxedProblem() {
             }
         }
         
-
+        //+ lambda[i][k] * (F_th[i] - F[i][k] * x_vars[i][k])
         // set obj (z)
         GRBLinExpr objective = 0;
         for (int i = 0; i < I; ++i) {
             for (int k = 0; k < K; ++k) {
-                objective += x_vars[i][k] * w[i] * R[i][k];
+                objective += x_vars[i][k] * w[i] * R[i][k] ;
             }
         }
+        
         model.setObjective(objective, GRB_MAXIMIZE);
-        // + lambda[i][k] * (x_vars[i][k] * R[i][k] - R_max[i])
+        // // constraint 1: x_{ik} R(i,k) <= R_{max,i}
+        // for (int i = 0; i < I; ++i) {
+        //     for (int k = 0; k < K; ++k) {
+        //         model.addConstr(x_vars[i][k] * R[i][k] <= R_max[i]);
+        //     }
+        // }
+
         // constraint 2: sum_i x_{ik} <= m_k
         for (int k = 0; k < K; ++k) {
             GRBLinExpr sum_x = 0;

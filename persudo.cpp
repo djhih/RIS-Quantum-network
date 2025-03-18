@@ -3,7 +3,7 @@
 #include<vector>
 #include<algorithm>
 #include"gurobi_c++.h"
-
+#include<cassert>
 using namespace std;
 
 
@@ -115,32 +115,6 @@ double pumping_pro(int distance, int n){
 		return entangle_prob(distance);
 	}
 }
-
-
-
-
-void Input(){
-	cin >> L_it >> I_user >> K_ris >> M_cap;
-	for(int i=0; i<I_user; i++){
-		user[i].id = i;
-		cin >> user[i].x_loc >> user[i].y_loc >> user[i].weight;
-	}
-	for(int i=0; i<K_ris; i++){
-		ris[i].id = i;
-		cin >> ris[i].x_loc >> ris[i].y_loc;
-	}
-	
-	// L: # of iterations
-	// target gap: target optimization gap
-	// I: # of users 
-	// K: # of RIS
-	// I_k: Users who can be served by RIS k 
-	// l_i: position for each user 
-	// l_j: position for each candidate location
-	// M: # of users that each RIS can serve simultaneously
-	// w_i: weight for each user 
-}
-
 	
 void get_dis(){
 	for(int i=0; i<I_user; i++){
@@ -150,7 +124,6 @@ void get_dis(){
 		}
 	}
 }
-
 // not sure
 void get_fid(){
 	for(int i=0; i<I_user; i++){
@@ -165,11 +138,18 @@ void get_fid(){
 void Initialization(){
 	get_dis();
 	get_fid();
+
+ //debug
+	for(int k=0; k<K_ris; k++){
+		for(int i=0; i<I_user; i++){
+			ris[k].cur_served_user_id.push_back(i);
+			rate[i][k] = 10;
+		}
+	}
 	//number_of_pumping();
 }
 
 double g_path(){
-
 	// fid[th][i] - f_func(i, k) * x[i][k];
 	// f_func => fidelity_count
 
@@ -206,9 +186,10 @@ double solveRelaxedProblem(double lambda) {
         for (int k = 0; k < K_ris; ++k) {
             for (int i : ris[k].cur_served_user_id) {
                 objective += x_vars[i][k] * user[i].weight * rate[i][k] + lambda * x_vars[i][k] * rate[i][k] - user[i].max_rate_threshold;
-            }
+				 
+			}
         }
-
+		model.setObjective(objective, GRB_MAXIMIZE);
         // constraint 2: sum_i x_{ik} <= m_k
         for (int k = 0; k < K_ris; ++k) {
             GRBLinExpr sum_x = 0;
@@ -368,6 +349,18 @@ void InputFromFile(const string &filename) {
 }
 
 
+void test(){
+	cout <<"hello";
+	for (int k = 0; k < K_ris; ++k) {
+		for (int i : ris[k].cur_served_user_id) {
+			cout << "value "<< user[i].weight * rate[i][k] + lambda[0] * rate[i][k] - user[i].max_rate_threshold <<"\n";
+		}
+	}
+
+
+}
+
+
 int main(int argc, char* argv[]){
 	
 	// 1. call path_selection_problem with the Rin and update the X
@@ -382,6 +375,7 @@ int main(int argc, char* argv[]){
     
     InputFromFile(filename);
 	Initialization();
-	// path_selection_problem();
-	solveRelaxedProblem(1);
+	//test();
+	path_selection_problem();
+	//solveRelaxedProblem(1);
 }
