@@ -18,10 +18,12 @@ double r_w[1000][1000]; // const
 
 double R_max[1000]; // user limit
 
-int R_bs_max;
+double R_bs_max;
 
 double x[100][100];
 double R[100][100];
+double V[100]; // w[i] * R_max[i]
+double s[100][100];
 
 
 void writer(){
@@ -58,6 +60,7 @@ void writer(){
         }
     }
     outFile << endl;
+
     for(int i = 0 ; i < I ; i++){
         outFile<< R_max[i] << " ";
     }
@@ -78,11 +81,10 @@ void input(){
     in >> K >> I;
     for(int i=0; i<I; i++) in >> w[i];
     for(int i=0; i<I; i++) for(int k=0; k<K; k++) in >> r_w[i][k];
-    for(int i=0; i<I; i++){ 
-        in >> R_max[i];
-        // cout << "get R_max " << R_max[i] << '\n';
-    }
+    for(int i=0; i<I; i++) in >> R_max[i];
     in >> R_bs_max;
+    for(int i=0; i<I; i++) V[i] = w[i] * R_max[i];
+    for(int i=0; i<I; i++) for(int k=0; k<K; k++) s[i][k] = R_max[i] / r_w[i][k];
     in.close();
 }
 
@@ -97,15 +99,14 @@ double solveRelaxedProblem() {
 
         // set x in [0, 1]
         vector<vector<GRBVar>> x_vars(I, vector<GRBVar>(K));
-        vector<vector<GRBVar>> R_in(I, vector<GRBVar>(K));
+        // vector<vector<GRBVar>> R_in(I, vector<GRBVar>(K)); // R_i, k
 
         //GRB_INTEGER
         for (int i = 0; i < I; ++i) {
             for (int k = 0; k < K; ++k) {
                 x_vars[i][k] = model.addVar(0.0, 1.0, 0.0, GRB_CONTINUOUS,"x_vars"+to_string(i)+to_string(k));
-                R_in[i][k] = model.addVar(0.0, 1000, 0.0, GRB_CONTINUOUS,"R_in"+to_string(i)+to_string(k));
+                // R_in[i][k] = model.addVar(0.0, 1000, 0.0, GRB_CONTINUOUS,"R_in"+to_string(i)+to_string(k));
             }
-            //R_in[i] = model.addVar(0.0, 100, 0.0, GRB_CONTINUOUS,"R_in");
         }
         
 
@@ -113,27 +114,19 @@ double solveRelaxedProblem() {
         GRBLinExpr objective = 0;
         for (int i = 0; i < I; ++i) {
             for (int k = 0; k < K; ++k) {
-                objective +=  w[i]*r_w[i][k] * R_in[i][k];
+                objective +=  V[i] * x_vars[i][k];
             }
         }
         model.setObjective(objective, GRB_MAXIMIZE);
-        //w[i] *
 
         // constraint 1 : sum R_in_i < R^BS_max
         GRBLinExpr sum_r =  0 ; 
         for(int k = 0 ; k < K ; k++){
             for(int i = 0 ; i < I ; i++){
-                sum_r += R_in[i][k] ;
+                sum_r += s[i][k] * x_vars[i][k];
             }
         }
         model.addConstr(sum_r <= R_bs_max);
-
-        // constraint 2: w_i * R_in,i/R_max,i <= x_ik
-        for(int i = 0 ; i < I ; ++i){
-            for(int k = 0 ; k < K ; ++k){
-                model.addConstr((r_w[i][k]*R_in[i][k])/R_max[i] <= x_vars[i][k]);
-            }
-        }
 
         //constraint 3: sum_i x_{ik} <= m_k
         for (int k = 0; k < K; ++k) {
@@ -164,24 +157,13 @@ double solveRelaxedProblem() {
         cout<<"total power "<<R_bs_max<<'\n';
 
         for (int i = 0; i < I; ++i) {
-            // R[i] = R_in[i][k].get(GRB_DoubleAttr_X);
-            // cout <<"user "<< i << " power : "<< R[i] << '\n';
             for (int k = 0; k < K; ++k) {
                 x[i][k] = x_vars[i][k].get(GRB_DoubleAttr_X);
-                R[i][k] = R_in[i][k].get(GRB_DoubleAttr_X);
-                // if(x[i][k]!=0){
-                //     cout <<"user "<< i << " power : "<< R[i][k] << '\n';
-                //     cout << "x : i " << i << " k " << k << ' ' << "decision "<< x[i][k] <<" obj "<<w[i] * r_w[i][k]<<" w : " << w[i] <<" r_w "<<r_w[i][k] <<" max rate "<<R_max[i] <<" user rate "<<r_w[i][k]*R[i][k]<< '\n';
-                // }
-                if(R[i][k] > 0){
-                    cout <<"user "<< i+1 << " power : "<< R[i][k] << '\n';
-                    cout << "x : i " << i+1 << " k " << k+1 << ' ' << "decision "<< x[i][k] <<" obj "<<w[i] * r_w[i][k]*R[i][k]<< " w' : "<< w[i] * r_w[i][k] <<" w : " << w[i] <<" r_w "<<r_w[i][k] <<" max rate "<< R_max[i] <<" user rate "<<r_w[i][k]*R[i][k]<< '\n';
-                    cout << "i " << i << " Rmax " << R_max[i] << '\n';
-                }
-            //    cout <<"user "<< i+1 << " power : "<< R[i][k] << '\n';
-            //    cout << "x : i " << i+1 << " k " << k+1 << ' ' << "decision "<< x[i][k] <<" obj "<<w[i] * r_w[i][k]*R[i][k]<< " w' : "<< w[i] * r_w[i][k] <<" w : " << w[i] <<" r_w "<<r_w[i][k] <<" max rate "<<R_max[i] <<" user rate "<<r_w[i][k]*R[i][k]<< '\n';
+                R[i][k] = R_max[i] * x_vars[i][k].get(GRB_DoubleAttr_X);
+
+               cout <<"user "<< i << " power : "<< R[i][k] << '\n';
+               cout << "x : i " << i << " k " << k << ' ' << "decision "<< x[i][k] <<" obj "<<w[i] * r_w[i][k]*R[i][k]<< " w' : "<< w[i] * r_w[i][k] <<" w : " << w[i] <<" r_w "<<r_w[i][k] <<" max rate "<<R_max[i] <<" user rate "<<r_w[i][k]*R[i][k]<< '\n';
                 
-                w[i] * r_w[i][k] * R[i][k] ;
             }
         }
         writer();
