@@ -24,7 +24,35 @@ using namespace std;
     14. dis[|I|][|K|]: dis(i, k)
     15. dis_bs[|k|]: dis(k, bs)
     16. dis_tot[|I|][|K|]: dis(i, k) + dis(k, bs)
+
+output: 
+    1. I
+    2. K
+    3. R_bs_max
+    4. R_user_max[|I|]
+    5. w[i]
+    6. prob_en[|I|][|K|]
+    7. prob_pur[|I|][|K|]
+    8. n[|I|][|K|]
 */
+
+int I = 10; // number of users
+int K = 5; // number of RISs
+const double beta = 0.00438471;
+double R_bs_max = 100; // max rate of BS
+const double fidelity_threshold = 0.8;
+
+struct purify_table {
+    double dis;
+    double fid_en;
+    double prob_en;
+    double prob_pur;
+    vector<double> fid_pur_times;
+
+    purify_table() : dis(0), fid_en(0), prob_en(1), prob_pur(1) {}
+    purify_table(double dis, double fid_en, double prob_en, double prob_pur)
+        : dis(dis), fid_en(fid_en), prob_en(prob_en), prob_pur(prob_pur) {}
+};
 
 int main(){
     ofstream out("raw/dataset.txt");
@@ -32,107 +60,100 @@ int main(){
         cout << "Error: Cannot open file raw/dataset.txt" << endl;
         exit(1);
     }
-    srand(time(0));
-    int I = 10; // number of users
-    int K = 5; // number of RISs
-    double R_bs_max = 100; // max rate of BS
-    out << I << " " << K << endl;
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> dist_int(0, 99);
+    uniform_real_distribution<> dist_real(0, 100);
+
     vector<double> R_user_max(I);
     vector<double> w(I);
-    vector<vector<double>> fid_en(I, vector<double>(K));
-    vector<vector<double>> fid_pur(I, vector<double>(K));
-    vector<vector<double>> prob_en(I, vector<double>(K));
-    vector<vector<double>> prob_pur(I, vector<double>(K));
     vector<vector<double>> n_pairs(I, vector<double>(K));
-    vector<double> loc_x(I);
-    vector<double> loc_y(I);
-    vector<double> loc_x_ris(K);
-    vector<double> loc_y_ris(K);
-    vector<vector<double>> dis(I, vector<double>(K));
+    vector<pair<double, double>> loc_user(I);
+    vector<pair<double, double>> loc_ris(I);
     vector<double> dis_bs(K);
+    vector<vector<double>> dis(I, vector<double>(K));
     vector<vector<double>> dis_tot(I, vector<double>(K));
-    double beta = 0.1; // parameter for entanglement fidelity
-    double max_dis = 100; // max distance
-    double min_dis = 10; // min distance
-    double max_fid = 0.9; // max fidelity
-    double min_fid = 0.5; // min fidelity
-    // generate random locations for users and RISs
+    vector<vector<purify_table>> data_i_k(I, vector<purify_table>(K));
+
+    out << I << " " << K << endl;
     for(int i = 0; i < I; i++){
-        loc_x[i] = rand() % 100;
-        loc_y[i] = rand() % 100;
+        int x = dist_int(gen), y = dist_int(gen);
+        while(x == 0 && y == 0){
+            x = dist_int(gen);
+            y = dist_int(gen);
+        }
+        loc_user[i] = {x, y};
     }
     for(int k = 0; k < K; k++){
-        loc_x_ris[k] = rand() % 100;
-        loc_y_ris[k] = rand() % 100;
+        int x = dist_int(gen), y = dist_int(gen);
+        while(x == 0 && y == 0){
+            x = dist_int(gen);
+            y = dist_int(gen);
+        }
+        loc_ris[k] = {x, y};
     }
+
     // generate random distances
+    // assume the BS is at (0, 0)
+    for(int k = 0; k < K; k++){
+        dis_bs[k] = sqrt(pow(loc_ris[k].first, 2) + pow(loc_ris[k].second, 2));
+    }
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            dis[i][k] = sqrt(pow(loc_x[i] - loc_x_ris[k], 2) + pow(loc_y[i] - loc_y_ris[k], 2));
+            dis[i][k] = sqrt(pow(loc_user[i].first - loc_ris[k].first, 2) + pow(loc_user[i].second - loc_ris[k].second, 2));
             dis_tot[i][k] = dis[i][k] + dis_bs[k];
-            if(dis[i][k] > max_dis){
-                dis[i][k] = max_dis;
-            } else if(dis[i][k] < min_dis){
-                dis[i][k] = min_dis;
-            }
+            data_i_k[i][k] = purify_table(dis[i][k], 1, 1, 1);
         }
     }
-    for(int k = 0; k < K; k++){
-        dis_bs[k] = sqrt(pow(loc_x_ris[k] - 50, 2) + pow(loc_y_ris[k] - 50, 2));
-        if(dis_bs[k] > max_dis){
-            dis_bs[k] = max_dis;
-        } else if(dis_bs[k] < min_dis){
-            dis_bs[k] = min_dis;
-        }
-    }
+
     // generate random max rate for users
     for(int i = 0; i < I; i++){
-        R_user_max[i] = rand() % 100 + 1;
+        R_user_max[i] = dist_int(gen);
         out << R_user_max[i] << " ";
     }
     out << endl;
+
     // generate random weights for users
     for(int i = 0; i < I; i++){
-        w[i] = rand() % 10 + 1;
+        uniform_real_distribution<> weight_dist(1, 10);
+        w[i] = weight_dist(gen);
         out << w[i] << " ";
     }
     out << endl;
+
     // generate random fidelity for users and RISs
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            fid_en[i][k] = entangle_fidelity(dis[i][k], beta);
-            if(fid_en[i][k] > max_fid){
-                fid_en[i][k] = max_fid;
-            } else if(fid_en[i][k] < min_fid){
-                fid_en[i][k] = min_fid;
-            }
-            out << fid_en[i][k] << " ";
+            data_i_k[i][k].fid_en = entangle_fidelity(dis[i][k], beta);
+            data_i_k[i][k].prob_en = entangle_success_prob(dis[i][k]);
         }
-        out << endl;
     }
+
     // generate random probability for users and RISs
+    // ! not sure
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            prob_en[i][k] = entangle_success_prob(dis[i][k]);
-            prob_pur[i][k] = purify_success_prob(fid_en[i][k], fid_pur[i][k]);
-            if(prob_en[i][k] > 1){
-                prob_en[i][k] = 1;
-            } else if(prob_en[i][k] < 0){
-                prob_en[i][k] = 0;
+            data_i_k[i][k].prob_en = entangle_success_prob(dis[i][k]);
+            // try to purify the entanglement until the fidelity over the threshold
+            for(int t=0; t<50; t++){
+                if(data_i_k[i][k].fid_pur_times.back() >= fidelity_threshold){
+                    n_pairs[i][k] = t;
+                    break;
+                }
+                double purify_fid = purify_fidelity(data_i_k[i][k].fid_en, data_i_k[i][k].fid_pur_times.back());  
+                data_i_k[i][k].prob_pur *= purify_success_prob(data_i_k[i][k].fid_en, data_i_k[i][k].fid_en);
+                data_i_k[i][k].fid_pur_times.push_back(purify_fid);
             }
-            if(prob_pur[i][k] > 1){
-                prob_pur[i][k] = 1;
-            } else if(prob_pur[i][k] < 0){
-                prob_pur[i][k] = 0;
-            }
-            out << prob_en[i][k] << " ";
+            out << data_i_k[i][k].prob_en << " ";
         }
         out << endl;
     }
+
+    // we have to count the times needed for user_i, ris_k to purify the entanglement
+
     // generate random number of entanglement pairs for users and RISs
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            n_pairs[i][k] = rand() % 10 + 1;
             out << n_pairs[i][k] << " ";
         }
         out << endl;
@@ -171,24 +192,17 @@ int main(){
         cout << w[i] << " ";
     }
     cout << endl;
-    cout << "fid_en: " << endl;
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            cout << fid_en[i][k] << " ";
-        }
-        cout << endl;
-    }
     cout << "prob_en: " << endl;
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            cout << prob_en[i][k] << " ";
+            cout << data_i_k[i][k].prob_en << " ";
         }
         cout << endl;
     }
     cout << "prob_pur: " << endl;
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            cout << prob_pur[i][k] << " ";
+            cout << data_i_k[i][k].prob_pur << " ";
         }
         cout << endl;
     }
@@ -196,45 +210,6 @@ int main(){
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
             cout << n_pairs[i][k] << " ";
-        }
-        cout << endl;
-    }
-    cout << "loc_x: ";
-    for(int i = 0; i < I; i++){
-        cout << loc_x[i] << " ";
-    }
-    cout << endl;
-    cout << "loc_y: ";
-    for(int i = 0; i < I; i++){
-        cout << loc_y[i] << " ";
-    }
-    cout << endl;
-    cout << "loc_x_ris: ";
-    for(int k = 0; k < K; k++){
-        cout << loc_x_ris[k] << " ";
-    }
-    cout << endl;
-    cout << "loc_y_ris: ";
-    for(int k = 0; k < K; k++){
-        cout << loc_y_ris[k] << " ";
-    }
-    cout << endl;
-    cout << "dis: " << endl;
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            cout << dis[i][k] << " ";
-        }
-        cout << endl;
-    }
-    cout << "dis_bs: ";
-    for(int k = 0; k < K; k++){
-        cout << dis_bs[k] << " ";
-    }
-    cout << endl;
-    cout << "dis_tot: " << endl;
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            cout << dis_tot[i][k] << " ";
         }
         cout << endl;
     }
