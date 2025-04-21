@@ -1,0 +1,22 @@
+total power 230
+user 1 power : 6.59574
+x : i 1 k 1 decision 0.219858 obj 6.59574 w' : 1 w : 1 r_w 1 max rate 30 user rate 6.59574
+i 0 Rmax 30
+user 1 power : 29.2553
+x : i 1 k 2 decision 0.780142 obj 23.4043 w' : 0.8 w : 1 r_w 0.8 max rate 30 user rate 23.4043
+i 0 Rmax 30
+user 3 power : 33.4347
+x : i 3 k 1 decision 0.780142 obj 23.4043 w' : 0.7 w : 1 r_w 0.7 max rate 30 user rate 23.4043
+i 2 Rmax 30
+user 4 power : 37.5
+x : i 4 k 4 decision 1 obj 30 w' : 0.8 w : 1 r_w 0.8 max rate 30 user rate 30
+i 3 Rmax 30
+user 6 power : 42.8571
+x : i 6 k 3 decision 1 obj 30 w' : 0.7 w : 1 r_w 0.7 max rate 30 user rate 30
+i 5 Rmax 30
+user 7 power : 37.5
+x : i 7 k 6 decision 1 obj 30 w' : 0.8 w : 1 r_w 0.8 max rate 30 user rate 30
+i 6 Rmax 30
+user 9 power : 42.8571
+x : i 9 k 5 decision 1 obj 30 w' : 0.7 w : 1 r_w 0.7 max rate 30 user rate 30
+i 8 Rmax 30

@@ -35,12 +35,12 @@ LIBS="-lgurobi_c++ -lgurobi95 -lm"
 OUTPUT_FILE="${SOURCE_FILE%.cpp}"  # 例如：輸入 my_solver.cpp，則輸出 my_solver
 
 # 開始編譯
-echo "🔧 正在編譯 Solver..."
+# echo "🔧 正在編譯 Solver..."
 $CXX $CXXFLAGS -I $INCLUDE_PATH $SOURCE_FILE -o $OUTPUT_FILE -L $LIB_PATH $LIBS
 
 # 檢查編譯是否成功
 if [ $? -eq 0 ]; then
-    echo "編譯成功，執行 Solver..."
+    # echo "編譯成功，執行 Solver..."
     ./$OUTPUT_FILE  # 執行 Solver
 else
     echo "編譯失敗，請檢查錯誤訊息！"

@@ -2,17 +2,14 @@ import random
 
 def generate_random_test_data(min_dim=2, max_dim=5):
     I = random.randint(min_dim, max_dim)
-    K = random.randint(min_dim, max_dim)
+    K = random.randint(I, max_dim)
 
-    w = [round(random.uniform(0.5, 2.0), 2) for _ in range(I)]
+    w = [round(random.uniform(0.5, 10.0), 2) for _ in range(I)]
 
-    r_w = []
-    for i in range(I):
-        row = [round(random.uniform(1, 10), 2) for _ in range(K)]
-        r_w.append(row)
+    r_w = [[1.0 / random.randint(1, 15) for _ in range(K)] for _ in range(I)]
 
-    R_max = [random.randint(10, 50) for _ in range(I)]
-    R_bs_max = random.randint(50, 200)
+    R_max = [random.randint(10, 100) for _ in range(I)]
+    R_bs_max = random.randint(50, 1000)
 
     
     with open('solver_data.txt', 'w', encoding='utf-8') as f:
@@ -30,4 +27,4 @@ def generate_random_test_data(min_dim=2, max_dim=5):
         f.write(str(R_bs_max) + "\n")
 
 if __name__ == "__main__":
-    generate_random_test_data(min_dim=3, max_dim=5)
+    generate_random_test_data(min_dim=2, max_dim=10)
