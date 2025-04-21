@@ -11,7 +11,7 @@ K_ris = random.randint(2, 5)         # RIS 數量
 M_cap = random.randint(50, 150)      # 例如：容量或其他參數
 
 # 輸出結果檔案名稱
-output_file = "testdata.txt"
+output_file = "raw/testdata.txt"
 
 # 定義座標產生範圍
 coord_min, coord_max = 10000, 100000
