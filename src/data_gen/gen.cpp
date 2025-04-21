@@ -1,15 +1,10 @@
 #include<iostream>
 #include<fstream>
-#include<string>
 #include<random>
-#include<algorithm>
 #include<ctime>
-#include<set>
-#include<map>
-#include<utility>
 #include<cmath>
 #include<limits>
-#include<queue>
+#include"../formula.h"
 using namespace std;
 
 /* This code is used to generate test cases, containing the following data:
@@ -29,9 +24,6 @@ using namespace std;
     14. dis[|I|][|K|]: dis(i, k)
     15. dis_bs[|k|]: dis(k, bs)
     16. dis_tot[|I|][|K|]: dis(i, k) + dis(k, bs)
-
-output:
-
 */
 
 int main(){

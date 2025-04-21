@@ -74,7 +74,7 @@ void writer(){
 
 
 void input(){
-    ifstream in("solver_data.txt");
+    ifstream in("data/tmp/solver_data.txt");
     in >> K >> I;
     for(int i=0; i<I; i++) in >> w[i];
     for(int i=0; i<I; i++) for(int k=0; k<K; k++) in >> r_w[i][k];
