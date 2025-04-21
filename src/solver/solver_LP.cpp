@@ -26,7 +26,7 @@ double R[100][100];
 
 void writer(){
 
-    ofstream outFile("decision_file.txt");
+    ofstream outFile("data/output/decision_file.txt");
 
     if (!outFile) {
         cerr << "無法開啟檔案進行寫入！" << endl;
@@ -74,7 +74,7 @@ void writer(){
 
 
 void input(){
-    ifstream in("data/tmp/solver_data.txt");
+    ifstream in("data/output/solver_data.txt");
     in >> K >> I;
     for(int i=0; i<I; i++) in >> w[i];
     for(int i=0; i<I; i++) for(int k=0; k<K; k++) in >> r_w[i][k];

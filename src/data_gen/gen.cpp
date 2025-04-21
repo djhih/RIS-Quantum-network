@@ -55,7 +55,7 @@ struct purify_table {
 };
 
 int main(){
-    ofstream out("raw/dataset.txt");
+    ofstream out("output/raw/dataset.txt");
     if(!out.is_open()){
         cout << "Error: Cannot open file raw/dataset.txt" << endl;
         exit(1);

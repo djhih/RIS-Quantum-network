@@ -1,4 +1,7 @@
 not_used/
 .vscode/
-.out
-.exe
+*.out
+*.exe
+tmp*.*
+test*.*
+*.log
