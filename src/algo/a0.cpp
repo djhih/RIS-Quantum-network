@@ -21,11 +21,111 @@ using namespace std;
 */
 
 /* --- Global Variables --- */
+const int INF = 1e9;
 int I, K;
 double R_bs_max;
 vector<double> R_user_max, w;
-vector<vector<double>> prob_en, prob_pur, n; // s_ik
+vector<vector<double>> prob_en, prob_pur, n_pairs; // s_ik
 vector<vector<double>> x, R_user; 
+vector<pair<int, int>>accept_assign; // ris_assign[i] = k, user_assign[k] = i
+
+/* --- process data from solver and do mathcing --- */
+void data_process(){
+    map<pair<int, int>, double> rem_pair_x;
+    for(int i=0; i<I; i++){
+        for(int k=0; k<K; k++){
+            if(x[i][k] == 1){
+                accept_assign.push_back({i, k});
+            } else if(x[i][k] > 0 && x[i][k] < 1){
+                rem_pair_x[{i, k}] = x[i][k];
+            }
+        }
+    }
+
+    // check if solver assign one user to more than three RISs
+    vector<int> user_cnt_ris(I, 0);
+    for(auto it = rem_pair_x.begin(); it != rem_pair_x.end(); it++){
+        auto [i, k] = it->first;
+        user_cnt_ris[i]++;
+        if(user_cnt_ris[i] > 3){
+            cout << "Error: User " << i << " is assigned to more than 3 RISs." << endl;
+            exit(1);
+        }
+    }
+
+    // check the remaining pairs
+    // if remaining pairs > 2, then exit
+    if(rem_pair_x.size() > 2){
+        cout << "Error: Remaining pairs > 2." << endl;
+        exit(1);
+    }
+    // if remaining pairs == 2, 
+    //   then check if it's a user-ris1, user-ris2 pair
+    //   if not, then exit
+    //   if yes, then try to move one to the lower power used pair
+    if(rem_pair_x.size() == 2){
+        auto it1 = rem_pair_x.begin();
+        auto it2 = ++rem_pair_x.begin();
+        auto [i1, k1] = it1->first;
+        auto [i2, k2] = it2->first;
+        if(i1 != i2){
+            cout << "Error: Remaining pairs are not user-ris1, user-ris2 pair." << endl;
+            exit(1);
+        } else {
+            // try move power from one to another
+            double power1 = R_user[i1][k1] * n_pairs[i1][k1] / (prob_en[i1][k1] * prob_pur[i1][k1]);
+            double power2 = R_user[i2][k2] * n_pairs[i2][k2] / (prob_en[i2][k2] * prob_pur[i2][k2]);
+            double current_useage = 0;
+            for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+                auto [i, k] = *it;
+                current_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+            }
+
+            if(power1 > power2){
+                // move power from k1 to k2
+                double diff = power1 - power2;
+                if(diff + current_useage > R_bs_max){
+                    cout << "Overload: Cannot move power from k1 to k2." << endl;
+                    exit(1);
+                }
+                accept_assign.push_back({i2, k2});
+            } else {
+                // move power from k2 to k1
+                double diff = power2 - power1;
+                if(diff + current_useage > R_bs_max){
+                    cout << "Error: Cannot move power from k2 to k1." << endl;
+                    exit(1);
+                }
+                accept_assign.push_back({i1, k1});
+            }
+        }
+    }
+
+    // if remaining pairs == 1, just use the current answer set.
+    return;
+}
+
+/* --- output result --- */
+void output_accept(){
+    cout << "Accepted assignment: " << endl;
+    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+        auto [i, k] = *it;
+        cout << "User " << i << " is assigned to RIS " << k << endl;
+    }
+    cout << "Total number of accepted assignment: " << accept_assign.size() << endl;
+    double obj = 0;
+    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+        auto [i, k] = *it;
+        obj += w[i] * R_user_max[i];
+    }
+    cout << "Objective value: " << obj << endl;
+    double total_power = 0;
+    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+        auto [i, k] = *it;
+        total_power += R_user[i][k] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+    }
+    cout << "Total power usage: " << total_power << endl;
+}
 
 /* --- input from solver generated file --- */
 void input_solver_gen_data(string solver_gen_file = "raw/solver_gen.txt"){
@@ -51,14 +151,15 @@ void input_dataset(string dataset_file = "raw/dataset.txt"){
     w.resize(I);
     prob_en.resize(I, vector<double>(K));
     prob_pur.resize(I, vector<double>(K));
-    n.resize(I, vector<double>(K));
+    n_pairs.resize(I, vector<double>(K));
     x.resize(I, vector<double>(K));
     R_user.resize(I, vector<double>(K));
+
     for(int i = 0; i < I; i++){ in >> R_user_max[i]; }
     for(int i = 0; i < I; i++){ in >> w[i]; }
     for(int i = 0; i < I; i++){ for(int j = 0; j < K; j++){ in >> prob_en[i][j]; } }
     for(int i = 0; i < I; i++){ for(int j = 0; j < K; j++){ in >> prob_pur[i][j]; } }
-    for(int i = 0; i < I; i++){ for(int j = 0; j < K; j++){ in >> n[i][j]; } }
+    for(int i = 0; i < I; i++){ for(int j = 0; j < K; j++){ in >> n_pairs[i][j]; } }
 }
 
 int main(){
