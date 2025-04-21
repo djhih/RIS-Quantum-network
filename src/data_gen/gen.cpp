@@ -49,7 +49,7 @@ struct purify_table {
     double prob_pur;
     vector<double> fid_pur_times;
 
-    purify_table() : dis(0), fid_en(0), prob_en(1), prob_pur(1) {}
+    purify_table() : dis(0), fid_en(0), prob_en(1), prob_pur(1), fid_pur_times(vector<double>()) {}
     purify_table(double dis, double fid_en, double prob_en, double prob_pur)
         : dis(dis), fid_en(fid_en), prob_en(prob_en), prob_pur(prob_pur) {}
 };
@@ -141,7 +141,7 @@ int main(){
                     break;
                 }
                 double purify_fid = purify_fidelity(data_i_k[i][k].fid_en, data_i_k[i][k].fid_pur_times.back());  
-                data_i_k[i][k].prob_pur *= purify_success_prob(data_i_k[i][k].fid_en, data_i_k[i][k].fid_en);
+                data_i_k[i][k].prob_pur *= purify_success_prob(data_i_k[i][k].fid_en, data_i_k[i][k].fid_pur_times.back());
                 data_i_k[i][k].fid_pur_times.push_back(purify_fid);
             }
             out << data_i_k[i][k].prob_en << " ";
