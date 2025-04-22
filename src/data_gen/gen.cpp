@@ -40,7 +40,7 @@ int I = 10; // number of users
 int K = 5; // number of RISs
 const double beta = 0.00438471;
 double R_bs_max = 100; // max rate of BS
-const double fidelity_threshold = 0.8;
+const double fidelity_threshold = 0.85;
 
 struct purify_table {
     double dis;
@@ -50,12 +50,12 @@ struct purify_table {
     vector<double> fid_pur_times;
 
     purify_table() : dis(0), fid_en(0), prob_en(1), prob_pur(1), fid_pur_times(vector<double>()) {}
-    purify_table(double dis, double fid_en, double prob_en, double prob_pur)
-        : dis(dis), fid_en(fid_en), prob_en(prob_en), prob_pur(prob_pur) {}
+    purify_table(double dis, double fid_en, double prob_en, double prob_pur, double prob_cur = 1)
+        : dis(dis), fid_en(fid_en), prob_en(prob_en), prob_pur(prob_pur), fid_pur_times(vector<double>()) {}
 };
 
 int main(){
-    ofstream out("output/raw/dataset.txt");
+    ofstream out("data/raw/dataset.txt");
     if(!out.is_open()){
         cout << "Error: Cannot open file raw/dataset.txt" << endl;
         exit(1);
@@ -75,7 +75,7 @@ int main(){
     vector<vector<double>> dis_tot(I, vector<double>(K));
     vector<vector<purify_table>> data_i_k(I, vector<purify_table>(K));
 
-    out << I << " " << K << endl;
+    out << I << " " << K << " " << R_bs_max << endl;
     for(int i = 0; i < I; i++){
         int x = dist_int(gen), y = dist_int(gen);
         while(x == 0 && y == 0){
@@ -108,77 +108,49 @@ int main(){
 
     // generate random max rate for users
     for(int i = 0; i < I; i++){
-        R_user_max[i] = dist_int(gen);
-        out << R_user_max[i] << " ";
-    }
-    out << endl;
-
-    // generate random weights for users
-    for(int i = 0; i < I; i++){
         uniform_real_distribution<> weight_dist(1, 10);
         w[i] = weight_dist(gen);
-        out << w[i] << " ";
+        R_user_max[i] = dist_int(gen);
+        out << w[i] << ' ' << R_user_max[i] << "\n";
     }
-    out << endl;
-
-    // generate random fidelity for users and RISs
+    
+    // generate random probability for users and RISs
     for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
+        for(int k = 0; k < K; k++){ 
             data_i_k[i][k].fid_en = entangle_fidelity(dis[i][k], beta);
             data_i_k[i][k].prob_en = entangle_success_prob(dis[i][k]);
-        }
-    }
-
-    // generate random probability for users and RISs
-    // ! not sure
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            data_i_k[i][k].prob_en = entangle_success_prob(dis[i][k]);
-            // try to purify the entanglement until the fidelity over the threshold
-            for(int t=0; t<50; t++){
+            
+            // 初始化第一個值為純糾纏保真度
+            data_i_k[i][k].fid_pur_times.push_back(data_i_k[i][k].fid_en);
+            
+            // 試著純化糾纏直到保真度超過閾值
+            for(int t=0; t<20; t++){
                 if(data_i_k[i][k].fid_pur_times.back() >= fidelity_threshold){
                     n_pairs[i][k] = t;
                     break;
                 }
-                double purify_fid = purify_fidelity(data_i_k[i][k].fid_en, data_i_k[i][k].fid_pur_times.back());  
-                data_i_k[i][k].prob_pur *= purify_success_prob(data_i_k[i][k].fid_en, data_i_k[i][k].fid_pur_times.back());
+                double purify_fid = purify_fidelity(data_i_k[i][k].fid_pur_times.back(), data_i_k[i][k].fid_en);  
+                data_i_k[i][k].prob_pur *= data_i_k[i][k].prob_en;
+                data_i_k[i][k].prob_pur *= purify_success_prob(data_i_k[i][k].fid_pur_times.back(), data_i_k[i][k].fid_en);
                 data_i_k[i][k].fid_pur_times.push_back(purify_fid);
             }
-            out << data_i_k[i][k].prob_en << " ";
         }
-        out << endl;
     }
 
-    // we have to count the times needed for user_i, ris_k to purify the entanglement
-
-    // generate random number of entanglement pairs for users and RISs
+    // generate entanglement probability
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            out << n_pairs[i][k] << " ";
+            if(data_i_k[i][k].fid_en > fidelity_threshold && data_i_k[i][k].prob_pur == 0){
+                data_i_k[i][k].prob_pur = 1;
+            }
+            out << data_i_k[i][k].prob_en << " " << data_i_k[i][k].prob_pur << " " << n_pairs[i][k] << "\n";
         }
-        out << endl;
-    }
-    // generate random distance for users and RISs
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            out << dis[i][k] << " ";
-        }
-        out << endl;
-    }
-    // generate random distance for RISs and BS
-    for(int k = 0; k < K; k++){
-        out << dis_bs[k] << " ";
-    }
-    out << endl;
-    // generate random total distance for users and RISs
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            out << dis_tot[i][k] << " ";
-        }
-        out << endl;
     }
     out.close();
+
+
     cout << "Test case generated successfully!" << endl;
+    
     cout << "I: " << I << endl;
     cout << "K: " << K << endl;
     cout << "R_bs_max: " << R_bs_max << endl;
@@ -192,6 +164,20 @@ int main(){
         cout << w[i] << " ";
     }
     cout << endl;
+    cout << "dis: " << endl;
+    for(int i = 0; i < I; i++){
+        for(int k = 0; k < K; k++){
+            cout << dis[i][k] << " ";
+        }
+        cout << endl;
+    }
+    cout << "fid_en: " << endl;
+    for(int i = 0; i < I; i++){
+        for(int k = 0; k < K; k++){
+            cout << data_i_k[i][k].fid_en << " ";
+        }
+        cout << endl;
+    }
     cout << "prob_en: " << endl;
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){

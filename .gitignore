@@ -5,3 +5,5 @@ not_used/
 tmp*.*
 test*.*
 *.log
+res/
+output/
