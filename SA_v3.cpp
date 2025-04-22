@@ -92,18 +92,20 @@ double E2E_rate(int i, double Rin_i, double Rpos_x, double Rpos_y)    // RE2E,i 
 double calculate_WFI(Solution& sol)//(vector<double>& Rin, int Rpos_x, int Rpos_y)
 {
     double nu, de;  // Numerator, Denominator
+    cout << "\n";
     for(int i=0; i<I; i++)
     {
         int k = sol.match[i];
         if(k != -1)
-            cout << "user_" << i << " is served by RIS_" << k << "\n";
+            cout << "user_" << i << ": RIS_" << k << "\n"; // cout << "user_" << i << " is served by RIS_" << k << "\n";
         else
-            cout << "user_" << i << " is not served\n";
+            cout << "user_" << i << ": not served\n";
         double RE2E_i = E2E_rate(i, sol.Rin[i], Ris_pos[k].x, Ris_pos[k].y);
         nu += RE2E_i;
         de += pow(RE2E_i, 2)/w[i];
     }
     double cal_WFI = pow(nu, 2)/de;
+    cout << "WFI: " << cal_WFI << "\n";
     return cal_WFI;
 }
 
@@ -185,6 +187,7 @@ void check_fidelity_capaticy(Solution& sol, int k)
         }
 
         // cout << "remove:\n";
+        cout << "RIS_" << k << " serves: ";
         for(int j=0; j<user_served_num; j++)  // pick the best ones --> 1) remove from unserved list, 2) subtract rate, 3) update match
         {
             int i = users[j].id;
@@ -195,16 +198,19 @@ void check_fidelity_capaticy(Solution& sol, int k)
             }
             else
             {
-                // cout << "user_" << i << " is served by" << k << "\n";
+                cout << i << " ";
+                // cout << "user_" << i << " is served by RIS_" << k << "\n";
                 sol.match[i] = k;
                 sol.Rin_left -= sol.Rin[i];
                 auto it = find(sol.user_left.begin(), sol.user_left.end(), i);
                 sol.user_left.erase(it);
             }
         }
+        cout << "\n";
     }
     else
     {
+        cout << "RIS_" << k << " serves: ";
         for(int i=0; i<I; i++) // for(int j=0; j<user_left_num; j++)
         {
             // cout << user_left_num << "\n";
@@ -213,6 +219,7 @@ void check_fidelity_capaticy(Solution& sol, int k)
             // cout << "i:" << i << "\n";
             if(sol.match[i] == k)
             {
+                cout << i << " ";
                 // cout << "user_" << i << " is served!\n";
                 // cout << "user_" << i << " is served by" << k << "\n";
                 sol.Rin_left -= sol.Rin[i];
@@ -220,6 +227,7 @@ void check_fidelity_capaticy(Solution& sol, int k)
                 sol.user_left.erase(it);
             }
         }
+        cout << "\n";
     }
 
     /* cout << "updated match: ";
@@ -230,8 +238,8 @@ void check_fidelity_capaticy(Solution& sol, int k)
 
 void random_rate_distribute(Solution& sol, int k)
 {
-    cout << "\nrandom_rate_distribute!\n";
-    cout << "RIS_" << k << ":" << endl;
+    // cout << "\nrandom_rate_distribute!\n";
+    cout << "\n\nRIS_" << k << ":" << endl;
 
     cout << sol.Rin_left << " rate left\n" << sol.user_left.size() << " users left\n";
 
