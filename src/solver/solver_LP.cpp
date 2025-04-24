@@ -173,11 +173,11 @@ double solveRelaxedProblem() {
                 //     cout <<"user "<< i << " power : "<< R[i][k] << '\n';
                 //     cout << "x : i " << i << " k " << k << ' ' << "decision "<< x[i][k] <<" obj "<<w[i] * r_w[i][k]<<" w : " << w[i] <<" r_w "<<r_w[i][k] <<" max rate "<<R_max[i] <<" user rate "<<r_w[i][k]*R[i][k]<< '\n';
                 // }
-                if(R[i][k] > 0){
+                //if(R[i][k] > 0){
                     cout <<"user "<< i+1 << " power : "<< R[i][k] << '\n';
                     cout << "x : i " << i+1 << " k " << k+1 << ' ' << "decision "<< x[i][k] <<" obj "<<w[i] * r_w[i][k]*R[i][k]<< " w' : "<< w[i] * r_w[i][k] <<" w : " << w[i] <<" r_w "<<r_w[i][k] <<" max rate "<< R_max[i] <<" user rate "<<r_w[i][k]*R[i][k]<< '\n';
                     cout << "i " << i << " Rmax " << R_max[i] << '\n';
-                }
+                //}
             //    cout <<"user "<< i+1 << " power : "<< R[i][k] << '\n';
             //    cout << "x : i " << i+1 << " k " << k+1 << ' ' << "decision "<< x[i][k] <<" obj "<<w[i] * r_w[i][k]*R[i][k]<< " w' : "<< w[i] * r_w[i][k] <<" w : " << w[i] <<" r_w "<<r_w[i][k] <<" max rate "<<R_max[i] <<" user rate "<<r_w[i][k]*R[i][k]<< '\n';
                 
