@@ -6,7 +6,20 @@
 #include <ctime>
 #include <algorithm> // use shuffle for randomization?
 #include <random>
+#include <fstream>
+#include"../formula.h"
 using namespace std;
+
+/* --- Global Variables --- */
+const int INF = 1e9;
+int I, K;
+double R_bs_max;
+vector<double> R_user_max, w;
+vector<vector<double>> prob_en, prob_pur, n_pairs; // s_ik
+vector<pair<int, int>>accept_assign; // ris_assign[i] = k, user_assign[k] = i
+double R_user[100];
+// double R_user[100][100]; // R_user[i][k] \in [0, R_user_max[i]]: rate of user i with RIS k
+double cur_power_used = 0;
 
 // L: # of iterations
 // I: # of users
@@ -25,17 +38,14 @@ using namespace std;
 // max: sum sum xik * wi * entangle_prob(i,k) * Rin,i
 // SA choose best --> check wi * entangle_prob(i,k) * Rin,i
 
-const double fid_parameter_beta = 0.0044;
-const double pro_parameter_alpha = 0.0002;
+// const double fid_parameter_beta = 0.0044;
+// const double pro_parameter_alpha = 0.0002;
+
 mt19937 gen(42);
 
+/* --- SA --- */
 int L = 5; // # of iterations
-int I;
-int K;
-int m_k; // # of users each RIS can serve
-int Rin_bs = 100; // initial rate --> double? int?
-double w[1000];
-double f_th[1000];
+int m_k = 1; // # of users each RIS can serve
 double T = 5;
 double Tmin = 1;
 double T_alpha = 0.6;
@@ -48,16 +58,9 @@ struct R_pos{
     double x, y;
 };
 
-struct User{
-    int id;
-    double performance;
-};
-
 Vec base;
 vector<Vec> I_pos;
 vector<Vec> Ris_pos;
-vector<Vec> capacity; // RIS can serve how many users, don't don't whether it is unify or not
-int Ris_capacity; // in case it is unify
 
 struct Solution{ //sol_current; sol_ans; sol_opt
     // Vec pos;   // a.pos.x; a.pos.y
@@ -70,164 +73,152 @@ struct Solution{ //sol_current; sol_ans; sol_opt
     vector<int> user_left; // users not yet been served --> their ID
 };
 
-double entangle_prob(double distance)
-{
-    return exp( -pro_parameter_alpha*distance );
-}
+// double entangle_prob(double distance)
+// {
+    // return exp( -pro_parameter_alpha*distance );
+// }
 
-double entangle_fid(double distance){
-	return 0.5 + 0.5*exp( -fid_parameter_beta*distance )/2 ;
-}
+// double entangle_fid(double distance){
+	// return 0.5 + 0.5*exp( -fid_parameter_beta*distance )/2 ;
+// }
 
-double E2E_rate(int i, double Rin_i, double Rpos_x, double Rpos_y)    // RE2E,i --> our R(i,k)
-{
-    // i: user id
-    double distance = sqrt( pow(Rpos_x - base.x, 2) + pow(base.y - I_pos[i].y, 2) )
-    + sqrt( pow(Rpos_x - I_pos[i].x, 2) + pow(Rpos_y - I_pos[i].y, 2) );   // dist between base & RIS_k + between RIS_k & user_i
-    double p_succ = entangle_prob(distance) * Rin_i;
-    return p_succ;
-}
-
-double calculate_WFI(Solution& sol)//(vector<double>& Rin, int Rpos_x, int Rpos_y)
+double calculate_WFI(Solution& sol)
 {
     double nu, de;  // Numerator, Denominator
+    // cout << "\n";
     for(int i=0; i<I; i++)
     {
         int k = sol.match[i];
-        if(k != -1)
-            cout << "user_" << i << " is served by RIS_" << k << "\n";
-        else
-            cout << "user_" << i << " is not served\n";
-        double RE2E_i = E2E_rate(i, sol.Rin[i], Ris_pos[k].x, Ris_pos[k].y);
+        // if(k != -1)
+            // cout << "user_" << i << ": RIS_" << k << "\n";
+        // else
+            // cout << "user_" << i << ": not served\n";
+        double RE2E_i = prob_en[i][k]*sol.Rin[i];
         nu += RE2E_i;
         de += pow(RE2E_i, 2)/w[i];
     }
     double cal_WFI = pow(nu, 2)/de;
+    // cout << "WFI: " << cal_WFI << "\n";
     return cal_WFI;
 }
 
-void check_fidelity_capaticy(Solution& sol, int k)
+void checkpoint(Solution& sol, int k)
 {
+    // cout << "checkpoint\n";
     int user_left_num = sol.user_left.size();
-    cout << "USER LEFT NUM:" << user_left_num << "\n";
+    // cout << "USER LEFT NUM:" << user_left_num << "\n";
     int loop = user_left_num;
+    int user_served_num = 0;
+
     for (int j = 0; j < loop; j++)
     {
         int i = sol.user_left[j];
-        double distance = sqrt( pow(base.x - Ris_pos[k].x, 2) + pow(base.y - Ris_pos[k].y, 2) )
-        + sqrt( pow(Ris_pos[k].x - I_pos[i].x, 2) + pow(Ris_pos[k].y - I_pos[i].y, 2) );
-        double fidelity = entangle_fid(distance);
-        cout << "user_" << i << " | rate:" <<  sol.Rin[i] << " dist:" << distance << " fid:" << fidelity << "\n";
+        // cout << "user_" << i << " | n:" << n_pairs[i][k] << " rate:" << sol.Rin[i] << "\n";
 
-        if(fidelity >= f_th[i] && sol.Rin[i] != 0) // accept --> later have to 1) remove from unserved list, 2) subtract rate, 3) update match
+        if(sol.Rin[i] != 0)
         {
             // cout << "ACCEPT\n\n";
+            user_served_num++;
         }
         else // refuse --> remove from match --> set -1
         {
-            // cout << "REJECT\n\n";
+            // if(n_pairs[i][k]+1 > 1)
+                // cout << "REJECT: FIDELITY TOO LOW\n";
+            // if(sol.Rin[i] == 0)
+                // cout << "REJECT: NO RATE\n";
             sol.match[i] = -1;
             sol.Rin[i] = 0;
+            // cout << "\n";
+        }
+    }
+
+    // rank performance --> pick best
+    // cout << "user_served_num:" << user_served_num << "\n";
+    int pick_user_id = -1;
+    if(user_served_num != 0)
+    {
+        double max_obj = 0;
+        for(int j=0; j<user_left_num; j++)
+        {
+            int i = sol.user_left[j];
+            if(sol.match[i] == k)
+            {
+                double currernt_obj = w[i]*sol.Rin[i]*sol.Rin[i]/R_user_max[i];
+                // cout << "user_" << i << " | performance(obj):" << currernt_obj << "\n";
+                if(currernt_obj > max_obj)
+                {
+                    max_obj = currernt_obj;
+                    pick_user_id = i;
+                }
+            }
+        }
+        // cout << "BEST: user_" << pick_user_id << " | performance:" << max_obj << "\n";
+    }
+
+    for(int j=0; j<user_left_num; j++)
+    {
+        int i = sol.user_left[j];
+        if(i == pick_user_id)
+        {
+            // cout << "RIS_" << k << " serves: user_" << pick_user_id << "\n";
+            sol.match[pick_user_id] = k;
+            auto it = find(sol.user_left.begin(), sol.user_left.end(), i);
+            sol.user_left.erase(it);
             user_left_num--;
         }
     }
 
-    cout << "num of users served by this RIS:" << user_left_num << "\n";
-    if(user_left_num > m_k) // exceed capacity --> remove users that performs poorly
+    for(int j=0; j<user_left_num; j++)
     {
-        cout << "EXCEED CAPACITY\n";
-        vector<User> users;
-        for(int j=0; j<user_left_num; j++)
+        int i = sol.user_left[j];
+        if(i != pick_user_id) // remove
         {
-            int i = sol.user_left[j];
-            User input;
-            input.id = i;
-            input.performance = w[i]*E2E_rate(i, sol.Rin[i], Ris_pos[k].x, Ris_pos[k].y); // wi * entangle_prob(i,k) * Rin,i
-            users.push_back(input);
-            // cout << "user_" << i << " | performance:" << users[i].performance << "\n";
-        }
-        sort(users.begin(), users.end(), [](const User& a, const User& b) {return a.performance > b.performance;});
-
-        for(int i=0; i<user_left_num; i++)
-            cout << "user_" << users[i].id << " | performance:" << users[i].performance << "\n";
-
-        cout << "remove:";
-        for(int j=0; j<user_left_num; j++)  // pick the best ones --> 1) remove from unserved list, 2) subtract rate, 3) update match
-        {
-            int i = users[j].id;
-            if(j >= m_k) // remove
-            {
-                sol.match[i] = -1;
-                sol.Rin[i] = 0;
-            }
-            else
-            {
-                // cout << "user_" << i << " is served!\n";
-                sol.Rin_left -= sol.Rin[i];
-                auto it = find(sol.user_left.begin(), sol.user_left.end(), i);
-                sol.user_left.erase(it);
-            }
-        }
-    }
-    else
-    {
-        for(int j=0; j<user_left_num; j++)
-        {
-            int i = sol.user_left[j];
-            // cout << "user_" << i << " is served!\n";
-            sol.Rin_left -= sol.Rin[i];
-            auto it = find(sol.user_left.begin(), sol.user_left.end(), i);
-            sol.user_left.erase(it);
+            sol.Rin_left += sol.Rin[i]*prob_en[i][k];
+            sol.match[i] = -1;
+            sol.Rin[i] = 0;
         }
     }
 
-    /* cout << "updated match: ";
-    for(int i=0; i<I; i++)
-        cout << sol.match[i] << " ";
-    cout << "\n"; */
+    /*cout << "user left: ";
+    for(int i=0; i<user_left_num; i++)
+    {
+        cout << sol.user_left[i] << " ";
+    }
+    cout << "\n";*/
 }
 
-void random_rate_distribute(Solution& sol, int k)
+void rate_distribution(Solution& sol, int k)
 {
-    cout << "\nrandom_rate_distribute!\n";
-    cout << "RIS_" << k << ":" << endl;
+    // cout << "\n\nRIS_" << k << ":" << endl;
+    // cout << "\nrandom_rate_distribute!\n";
 
-    cout << sol.Rin_left << " rate left\n" << sol.user_left.size() << " users left\n";
+    // cout << sol.Rin_left << " rate left\n" << sol.user_left.size() << " users left\n";
 
-    uniform_int_distribution<> dis(0, sol.Rin_left);
-
-    vector<int> energy_cuts;
-    for (int i = 0; i < sol.user_left.size() - 1; i++)
+    for(int j=0; j<sol.user_left.size(); j++)
     {
-        energy_cuts.push_back(dis(gen));
+        int i = sol.user_left[j];
+        if( sol.Rin_left == 0 || n_pairs[i][k]+1 > 1)
+        {
+            sol.Rin[i] = 0;
+        }
+        else if( j == sol.user_left.size()-1 ) // last user take all that is left
+        {
+            sol.Rin[i] = min(sol.Rin_left*prob_en[i][k], R_user_max[i]);
+        }
+        else
+        {
+            uniform_int_distribution<> dis(0, min(sol.Rin_left*prob_en[i][k], R_user_max[i]));
+            sol.Rin[i] = dis(gen);
+        }
+        sol.Rin_left -= sol.Rin[i]/prob_en[i][k];
+        // cout << "user" << i << ": " << sol.Rin[i] << "  ";
     }
-
-    sort(energy_cuts.begin(), energy_cuts.end());
-
-    energy_cuts.insert(energy_cuts.begin(), 0);
-    energy_cuts.push_back(sol.Rin_left);
-
-
-    int user_left_num = sol.user_left.size();
-    vector<int> energy(user_left_num);
-    for (int i = 0; i < user_left_num; i++)
-    {
-        energy[i] = energy_cuts[i + 1] - energy_cuts[i];
-        sol.Rin[sol.user_left[i]] = energy[i];
-    }
-
-    /* for (int i = 0; i < user_left_num; i++)
-    {
-        // cout << energy[i] << " ";
-        // sol.Rin[sol.user_left[i]] = energy[i];
-        cout << "user" << sol.user_left[i] << ": " << sol.Rin[sol.user_left[i]] << "  ";
-    }
-    cout << endl;*/
+    // cout << "R_bs_rate left: "<< sol.Rin_left << "\n\n";
 }
 
 void random_pick_ris(int table[])
 {
-    cout << "\nrandom_pick_ris!\n";
+    // cout << "\nrandom_pick_ris!\n";
 
     vector<int> random_ris;
     for (int i = 0; i < K; i++)
@@ -251,7 +242,8 @@ double calculate_obj(Solution& sol)
         int k = sol.match[i];
 
         if(sol.Rin[i] != 0)
-            obj = obj + w[i]*E2E_rate(i, sol.Rin[i], Ris_pos[k].x, Ris_pos[k].y);
+            obj = obj + w[i]*sol.Rin[i]*sol.Rin[i]/R_user_max[i];
+            // obj = obj + w[i]*E2E_rate(i, sol.Rin[i], Ris_pos[k].x, Ris_pos[k].y);
         // cout << "E2E_rate: " << E2E_rate(i, sol.Rin[i], Ris_pos[k].x, Ris_pos[k].y) << " | weight: " << w[i] << "\n";
     }
     return obj;
@@ -263,7 +255,7 @@ void SA()
 
     // initialize the current sol
     Solution sol_current;
-    sol_current.Rin_left = Rin_bs;
+    sol_current.Rin_left = R_bs_max;
     for(int i=0; i<I; i++)
     {
         sol_current.Rin.push_back(0);
@@ -272,49 +264,44 @@ void SA()
     {
         sol_current.user_left.push_back(i);
     }
-    /*cout << "\nwho's left? ";
-    for(int i=0; i<I; i++)
-    {
-        cout << sol_current.user_left[i] << " ";
-    }*/
-
-    // int user_left_num = sol_current.user_left.size();
-    // cout << "\nHow many users left? " << sol_current.user_left.size();
 
     for(int i=0; i<I; i++)
     {
         sol_current.match.push_back(-1);
     }
     random_pick_ris(ris_table);
-    cout << "RIS sequence: ";
+    /*cout << "RIS sequence: ";
     for(int i=0; i<K; i++)
     {
         cout << ris_table[i] << " ";
     }
-    cout << endl;
+    cout << endl;*/
 
     for(int k=0; k<K; k++) // k: index for RIS
     {
         if(sol_current.user_left.size() == 0)
+        {
+            // cout << "all served\n";
             break;
+        }
+
         // update match --> all unserved users assign to RIS[k]
         for(int j=0; j<sol_current.user_left.size(); j++)
         {
             int i = sol_current.user_left[j];
-            sol_current.match[i] = k;
+            sol_current.match[i] = ris_table[k];
         }
-        random_rate_distribute(sol_current, ris_table[k]);
-        check_fidelity_capaticy(sol_current, k);
+        rate_distribution(sol_current, ris_table[k]);
+        checkpoint(sol_current, ris_table[k]);
     }
     sol_current.WFI = calculate_WFI(sol_current);
-    cout << "current sol WFI:" << sol_current.WFI << "\n\n";
 
     // initialize the optimal sol to current sol
     Solution sol_opt = sol_current;
 
     /*--------------------------*/
 
-    cout << "------------------\nDONE INITIALIZING\n------------------\n\n";
+    // cout << "------------------\nDONE INITIALIZING\n------------------\n\n";
 
     // cout << T << " " << Tmin << "\n";
     while(T > Tmin)
@@ -325,7 +312,7 @@ void SA()
             // initialize the new sol
             Solution sol_new;
 
-            sol_new.Rin_left = Rin_bs;
+            sol_new.Rin_left = R_bs_max;
             for(int i=0; i<I; i++)
             {
                 sol_new.Rin.push_back(0);
@@ -340,12 +327,12 @@ void SA()
                 sol_new.match.push_back(-1);
             }
             random_pick_ris(ris_table);
-            cout << "RIS sequence: ";
+            /*cout << "RIS sequence: ";
             for(int i=0; i<K; i++)
             {
                 cout << ris_table[i] << " ";
             }
-            cout << endl;
+            cout << endl;*/
 
             for(int k=0; k<K; k++) // k: index for RIS
             {
@@ -355,15 +342,14 @@ void SA()
                 for(int j=0; j<sol_new.user_left.size(); j++)
                 {
                     int i = sol_new.user_left[j];
-                    sol_new.match[i] = k;
+                    sol_new.match[i] = ris_table[k]; // k;
                 }
-                random_rate_distribute(sol_new, ris_table[k]);
-                check_fidelity_capaticy(sol_new, k);
+                rate_distribution(sol_current, ris_table[k]); // random_rate_distribute(sol_new, ris_table[k]);
+                checkpoint(sol_current, ris_table[k]); // check_fidelity_capaticy(sol_new, ris_table[k]);
             }
 
             // calculate WFI & WFI_diff
             sol_new.WFI = calculate_WFI(sol_new);
-            // cout << "new sol WFI:" << sol_new.WFI << "\n\n";
             double delta_U = sol_new.WFI - sol_current.WFI;
 
             // update current ans if WFI_diff > 0
@@ -376,7 +362,6 @@ void SA()
                 // Generate a random number r: 0~1
                 uniform_real_distribution<double> dist(0.0, 1.0);
                 double r = dist(gen);
-                // cout << "r:" << r << "\n";
                 if( exp(delta_U/T) > r ) // if r > 0, update sol_ans as well
                 {
                     sol_current = sol_new;
@@ -388,81 +373,91 @@ void SA()
             {
                 sol_opt = sol_current;
             }
-            cout << "------------------\nEND OF ONE ITERATION\n------------------\n\n";
+            // cout << "------------------\nEND OF ONE ITERATION\n------------------\n\n";
         }
         T = T*T_alpha;
     }
 
-    cout << "------------------\nRESULT\n------------------\n\n";
+    // cout << "------------------\nRESULT\n------------------\n";
     for(int i=0; i<I; i++)
     {
         if(sol_opt.match[i] != -1)
-            cout << "user_" << i << ": RIS_" << sol_opt.match[i] << "\n";
-        else
-            cout << "user_" << i << ": not served\n";
+        {
+            accept_assign.push_back({i,sol_opt.match[i]});
+            int k = sol_opt.match[i];
+            R_user[i] = sol_opt.Rin[i];
+            // R_user[i][k] = sol_opt.Rin[i];
+            // cout << "user_" << i << ": RIS_" << sol_opt.match[i] << "\n";
+        }
+        // else
+            // cout << "user_" << i << ": not served\n";
     }
-    cout << "WFI: " << sol_opt.WFI << "\n";
-    cout << "obj: " << calculate_obj(sol_opt) << "\n";
+    // cout << "WFI: " << sol_opt.WFI << "\n";
+    // cout << "obj: " << calculate_obj(sol_opt) << "\n";
+    // cout << "------------------\n\n";
 }
 
 
+/* --- output result --- */
+void output_accept(){
+
+    ofstream out("data/res/res_SA_cp.txt");
+    if(!out.is_open()){
+        cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
+        exit(1);
+    }
+    out << "Accepted assignment: " << endl;
+    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+        auto [i, k] = *it;
+        out << "User " << i << " is assigned to RIS " << k << endl;
+    }
+    out << "Total number of accepted assignment: " << accept_assign.size() << endl;
+    double obj = 0;
+    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+        auto [i, k] = *it;
+        obj += w[i] * R_user_max[i];
+    }
+    out << "Objective value: " << obj << endl;
+    double total_power = 0;
+    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+        auto [i, k] = *it;
+        total_power += R_user[i] * (n_pairs[i][k]+1) / (prob_en[i][k]); // need modification
+       //  total_power += R_user_max[i] * (n_pairs[i][k]+1) / (prob_en[i][k] * prob_pur[i][k]);
+    }
+    out << "Total power usage: " << total_power << endl;
+}
+
+void input_dataset(string dataset_file = "data/raw/dataset.txt"){
+    ifstream in(dataset_file);
+    if(!in.is_open()){
+        cout << "Error: Cannot open file " << dataset_file << endl;
+        exit(1);
+    }
+    in >> I >> K;
+    in >> R_bs_max;
+    R_user_max.resize(I);
+    w.resize(I);
+    prob_en.resize(I, vector<double>(K));
+    prob_pur.resize(I, vector<double>(K));  // no
+    n_pairs.resize(I, vector<double>(K));   // no
+
+    for(int i = 0; i < I; i++){ in >> w[i] >> R_user_max[i]; }
+
+    // not used
+    for(int i = 0; i < I; i++){
+        for(int j = 0; j < K; j++){
+            in >> prob_en[i][j] >> prob_pur[i][j] >> n_pairs[i][j];
+            if(prob_pur[i][j] == 0){
+                prob_pur[i][j] = 1;
+            }
+        }
+    }
+    in.close();
+}
+
 int main()
 {
-    /* test input start */
-    K = 3, I = 6, m_k = 2;
-    base.x = 0;
-    base.y = 0;
-
-    Vec pos;
-    pos.x = 0;
-    pos.y = 10;
-    Ris_pos.push_back(pos);
-    pos.x = 50;
-    pos.y = 3;
-    Ris_pos.push_back(pos);
-    pos.x = 78;
-    pos.y = 44;
-    Ris_pos.push_back(pos);
-
-    pos.x = 7;
-    pos.y = 90;
-    I_pos.push_back(pos);
-    pos.x = 0;
-    pos.y = 99;
-    I_pos.push_back(pos);
-    pos.x = 30;
-    pos.y = 45;
-    I_pos.push_back(pos);
-    pos.x = 2;
-    pos.y = 2;
-    I_pos.push_back(pos);
-    pos.x = 5;
-    pos.y = 89;
-    I_pos.push_back(pos);
-    pos.x = 35;
-    pos.y = 6;
-    I_pos.push_back(pos);
-
-    for (int i = 0; i < I; i++)
-    {
-        //cin >> f_th[i];
-        f_th[i] = 0.65;
-    }
-    for (int i = 0; i < I; i++)
-    {
-        //cin >> w[i];
-        w[i] = 0.5;
-    }
-    /* test input end */
-
-    for (int i = 0; i < K; i++)
-    {
-        cout << "RIS_" << i << ":(" << Ris_pos[i].x << "," << Ris_pos[i].y << ")\n";
-    }
-    for (int i = 0; i < I; i++)
-    {
-        cout << "user_" << i << ":(" << I_pos[i].x << "," << I_pos[i].y << ")\n";
-    }
-
+    input_dataset();
     SA();
+    output_accept();
 }
