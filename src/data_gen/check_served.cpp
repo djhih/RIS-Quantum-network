@@ -4,6 +4,16 @@
 #define ss second
 using namespace std;
 
+/* This code is used to check if the user can be served by the RIS
+    1. I: # of users
+    2. K: # of RISs
+    3. loc_user[|I|]: location of user i
+    4. loc_ris[|K|]: location of RIS k
+    5. dis[i][k]: distance between user i and RIS k
+    6. dis_bs[k]: distance between RIS k and BS
+    7. dis_tot[i][k]: distance between user i and BS through RIS k
+*/
+
 struct position{
     pair<double, double>loc;
     pair<double, double>vec;
