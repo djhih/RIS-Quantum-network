@@ -11,6 +11,7 @@ vector<vector<double>> prob_en, prob_pur, n_pairs; // s_ik
 vector<pair<int, int>>accept_assign; // ris_assign[i] = k, user_assign[k] = i
 double cur_power_used = 0; // current power used by BS
 vector<vector<int>> ris_served_user; // ris_served_user[k] = i, user_served[i] = k
+map<pair<int, int>, int> can_serve; // serve_map[k, i] = 1: k can serve to i
 
 /* --- greedy --- */
 // greedy using w[i]
@@ -30,14 +31,17 @@ void greedy(){
         pq.pop();
         auto [i, k] = pair_ik;
         // check if we can assign user i to RIS k
-        if(cur_power_used + R_user_max[i] * (n_pairs[i][k]+1) / (prob_en[i][k] * prob_pur[i][k]) > R_bs_max){
+        if(can_serve.count({k, i}) == 0){
+            continue;
+        }
+        if(cur_power_used + R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]) > R_bs_max){
             continue;
         }
         if(!user_assigned[i] && !ris_assigned[k]){
             user_assigned[i] = true;
             ris_assigned[k] = true;
             accept_assign.push_back({i, k});
-            cur_power_used += R_user_max[i] * (n_pairs[i][k]+1) / (prob_en[i][k] * prob_pur[i][k]);
+            cur_power_used += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
         }
     }
 }
@@ -92,10 +96,8 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
     for(int i = 0; i < I; i++){ in >> w[i] >> R_user_max[i]; }
     for(int i = 0; i < I; i++){ 
         for(int j = 0; j < K; j++){ 
+            // assumtion: n_pairs[i][j] > 0, prob_pur[i][j] = 1 when we not doing purification
             in >> prob_en[i][j] >> prob_pur[i][j] >> n_pairs[i][j]; 
-            if(prob_pur[i][j] == 0){
-                prob_pur[i][j] = 1;
-            }
         }
     }
     for(int k = 0; k < K; k++){
@@ -104,6 +106,7 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
         ris_served_user.push_back(vector<int>(num_served));
         for(int i = 0; i < num_served; i++){
             in >> ris_served_user[k][i];
+            can_serve[{k, ris_served_user[k][i]}] = 1;
         }
     }
     in.close();

@@ -15,6 +15,7 @@ vector<pair<int, int>>accept_assign; // ris_assign[i] = k, user_assign[k] = i
 // problem formulatoin
 vector<double> V;
 vector<vector<double>> s, r_w, R_user, x;
+map<pair<int, int>, int> can_serve; // serve_map[k, i] = 1: k can serve to i
 
 /* --- input from dataset --- */
 void input_dataset(string dataset_file = "data/raw/dataset.txt"){
@@ -42,6 +43,15 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
             in >> prob_en[i][j] >> prob_pur[i][j] >> n_pairs[i][j]; 
         }
     }
+    for(int k = 0; k < K; k++){
+        int num_served;
+        in >> num_served;
+        for(int i = 0; i < num_served; i++){
+            int user_id;
+            in >> user_id;
+            can_serve[{k, user_id}] = 1;
+        }
+    }
     in.close();
 }
 
@@ -49,6 +59,7 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
 void data_process(){
     // v[i] = w[i] * R_user_max[i]
     // s[i][k] = n_pairs[i][k] / (pe[i][k] * pur[i][k])
+
     for(int i = 0; i < I; i++){
         V[i] = w[i] * R_user_max[i];
         for(int k = 0; k < K; k++){
@@ -56,8 +67,12 @@ void data_process(){
                 // cout << "Error: prob_en or prob_pur is 0." << endl;
                 exit(1);
             }
-            s[i][k] = (n_pairs[i][k]+1) / (prob_en[i][k] * prob_pur[i][k]) * R_user_max[i];
-            // cout << "s[i][k] " << s[i][k] << " n_pairs " << n_pairs[i][k] << " prob_en " << prob_en[i][k] << " prob_pur " << prob_pur[i][k] << '\n';
+            if(can_serve.count({k, i}) == 0){
+                s[i][k] = INF;
+            } else {
+                s[i][k] = (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]) * R_user_max[i];
+            }
+            
             r_w[i][k] = R_user_max[i] / s[i][k];
         }
     }

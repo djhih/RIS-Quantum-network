@@ -29,6 +29,8 @@ vector<vector<double>> prob_en, prob_pur, n_pairs; // s_ik
 vector<vector<double>> x, R_user; 
 vector<pair<int, int>>accept_assign; // ris_assign[i] = k, user_assign[k] = i
 pair<int, int> compare_pair; // pair of user and RIS to compare
+map<pair<int, int>, int> can_serve; // serve_map[k, i] = 1: k can serve to i
+vector<vector<int>> ris_served_user; // ris_served_user[k] = i, user_served[i] = k
 
 /* --- process data from solver and do mathcing --- */
 void data_process(){
@@ -207,6 +209,16 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
             }
         }
     }
+    for(int k = 0; k < K; k++){
+        int num_served;
+        in >> num_served;
+        ris_served_user.push_back(vector<int>(num_served));
+        for(int i = 0; i < num_served; i++){
+            in >> ris_served_user[k][i];
+            can_serve[{k, ris_served_user[k][i]}] = 1;
+        }
+    }
+    // if user i is not served by any RIS, then set prob_en[i][k] = 0
     in.close();
 }
 
