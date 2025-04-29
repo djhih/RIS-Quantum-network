@@ -59,6 +59,9 @@ Default setting:
 Plot:
     X Label: # Users, # RISs, dis(user, ris), BS power, Fidelity threshold, 平均負載(RIS 能服務的 user 數量)
     Y Label : obj, # Users
+
+Note:
+    1. n pair = 1 means 1 pair of entanglement and use 0 pair to purify
 */
 
 int I = 100; // number of users
@@ -236,6 +239,7 @@ int main(int argc, char *argv[]){
             double distance = users[i].dis_ris[k];
             data_i_k[i][k].fid_en = entangle_fidelity(distance, beta);
             data_i_k[i][k].prob_en = entangle_success_prob(distance);
+            cout << "fid_en: " << data_i_k[i][k].fid_en << " prob_en: " << data_i_k[i][k].prob_en << endl;
             
             // Initialize first value as entanglement fidelity
             data_i_k[i][k].fid_pur_times.push_back(data_i_k[i][k].fid_en);
@@ -243,7 +247,7 @@ int main(int argc, char *argv[]){
             // Try purifying until fidelity exceeds threshold
             for(int t = 0; t < 20; t++){
                 if(data_i_k[i][k].fid_pur_times.back() >= fidelity_threshold){
-                    users[i].n_pairs[k] = t;
+                    users[i].n_pairs[k] = t + 1; // ! we set n_pairs[k] = t + 1
                     break;
                 }
                 double purify_fid = purify_fidelity(data_i_k[i][k].fid_pur_times.back(), data_i_k[i][k].fid_en);  
@@ -258,7 +262,7 @@ int main(int argc, char *argv[]){
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
             if(data_i_k[i][k].fid_en > fidelity_threshold && data_i_k[i][k].prob_pur == 0){
-                data_i_k[i][k].prob_pur = 1;
+                data_i_k[i][k].prob_pur = 1; // ! if not purified, set prob_pur to 1
             }
             out << data_i_k[i][k].prob_en << " " << data_i_k[i][k].prob_pur << " " << users[i].n_pairs[k] << "\n";
         }
