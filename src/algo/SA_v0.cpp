@@ -48,7 +48,7 @@ mt19937 gen(42);
 /* --- SA --- */
 int L = 5; // # of iterations
 int m_k = 1; // # of users each RIS can serve
-double T = 15;
+double T = 10;
 double Tmin = 1;
 double T_alpha = 0.95;
 
@@ -189,12 +189,16 @@ void checkpoint(Solution& sol, int k)
     cout << "\n";*/
 }
 
-void rate_distribution(Solution& sol, int k)
+void rate_distribution(Solution& sol, int k, Solution& old_sol, int initial)
 {
     // cout << "\n\nRIS_" << k << ":" << endl;
     // cout << "\nrandom_rate_distribute!\n";
 
     // cout << sol.Rin_left << " rate left\n" << sol.user_left.size() << " users left\n";
+
+    // uniform_int_distribution<> dis(0, 1); // decide whether to keep that answer
+    // int bit = dis(gen);
+    int bit = 1;
 
     for(int j=0; j<sol.user_left.size(); j++)
     {
@@ -218,12 +222,17 @@ void rate_distribution(Solution& sol, int k)
         {
             sol.Rin[i] = min(sol.Rin_left*prob_en[i][k], R_user_max[i]);
         }
-        else
+        else if( initial == 0 || bit == 1 )
         {
             uniform_int_distribution<> dis(0, min(sol.Rin_left*prob_en[i][k], R_user_max[i]));
             sol.Rin[i] = dis(gen);
+            bit = 0;
         }
-        sol.Rin_left -= sol.Rin[i]/prob_en[i][k];
+        else
+        {
+            sol.Rin[i] = old_sol.Rin[i];
+        }
+        sol.Rin_left -= old_sol.Rin[i]/prob_en[i][k];
         // cout << "user" << i << ": " << sol.Rin[i] << "  ";
     }
     // cout << "R_bs_rate left: "<< sol.Rin_left << "\n\n";
@@ -304,7 +313,7 @@ void SA()
             int i = sol_current.user_left[j];
             sol_current.match[i] = ris_table[k];
         }
-        rate_distribution(sol_current, ris_table[k]);
+        rate_distribution(sol_current, ris_table[k], sol_current, 1);
         checkpoint(sol_current, ris_table[k]);
     }
     sol_current.WFI = calculate_WFI(sol_current);
@@ -357,8 +366,8 @@ void SA()
                     int i = sol_new.user_left[j];
                     sol_new.match[i] = ris_table[k]; // k;
                 }
-                rate_distribution(sol_current, ris_table[k]); // random_rate_distribute(sol_new, ris_table[k]);
-                checkpoint(sol_current, ris_table[k]); // check_fidelity_capaticy(sol_new, ris_table[k]);
+                rate_distribution(sol_new, ris_table[k], sol_current, 0); // random_rate_distribute(sol_new, ris_table[k]);
+                checkpoint(sol_new, ris_table[k]); // check_fidelity_capaticy(sol_new, ris_table[k]);
             }
 
             // calculate WFI & WFI_diff
