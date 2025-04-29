@@ -202,7 +202,7 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol, int fix_label)
 
     // fix --> whether we modify it
     int fix;
-    if(fix_label == 0) //(fix_label != -1 && fix_label < K/2) //(fix_label == 0)
+    if(fix_label != -1 && fix_label < K/2) //(fix_label == 0)
         fix = 1;
     else
         fix = 0;
@@ -221,7 +221,7 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol, int fix_label)
             }
         }
 
-        if(fix == 0)
+        if(fix == 1)
         {
             sol.Rin[i] = old_sol.Rin[i];
         }
