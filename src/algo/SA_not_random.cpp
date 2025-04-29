@@ -367,7 +367,7 @@ void SA()
                     int i = sol_new.user_left[j];
                     sol_new.match[i] = ris_table[k]; // k;
                 }
-                rate_distribution(sol_new, ris_table[k], sol_current, l); // when l = 0, this ris serve the same set of users with the same rate distribution
+                rate_distribution(sol_new, ris_table[k], sol_opt, k); // when k = 0, this ris serve the same set of users with the same rate distribution
                 checkpoint(sol_new, ris_table[k]);
             }
 
