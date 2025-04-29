@@ -177,7 +177,10 @@ void compare(){
     
     double cmp_useage = 0;
     cmp_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
-    
+    if(cmp_useage > R_bs_max){
+        return;
+    }
+
     vector<pair<int, int>> cmp_pairs;
     cmp_pairs.push_back(compare_pair);
 
@@ -288,6 +291,13 @@ void input_dataset(){
         for(int i = 0; i < num_served; i++){
             in >> ris_served_user[k][i];
             can_serve[{k, ris_served_user[k][i]}] = 1;
+        }
+    }
+    for(int k = 0; k < K; k++){
+        for(int i = 0; i< I; i++){
+            if(can_serve.count({k, i}) == 0){
+                n_pairs[i][k] = 1e9;
+            }
         }
     }
     // if user i is not served by any RIS, then set prob_en[i][k] = 0
