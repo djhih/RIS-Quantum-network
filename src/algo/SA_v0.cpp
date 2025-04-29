@@ -21,7 +21,7 @@ double R_user[100];
 // double R_user[100][100]; // R_user[i][k] \in [0, R_user_max[i]]: rate of user i with RIS k
 double cur_power_used = 0;
 vector<vector<int>> ris_served_user;
-// map<pair<int, int>, int> can_serve;
+map<pair<int, int>, int> can_serve;
 
 
 string infile = "data/raw/dataset.txt";
@@ -452,7 +452,7 @@ void output_accept(){
 void input_dataset(){
     ifstream in(infile);
     if(!in.is_open()){
-        cout << "Error: Cannot open file " << dataset_file << endl;
+        cout << "Error: Cannot open file " << infile << endl;
         exit(1);
     }
     in >> I >> K;
@@ -482,7 +482,7 @@ void input_dataset(){
     in.close();
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     if(argc != 3){
         cout << "Usage: ./greedy_cp <infile> <outfile>" << endl;
