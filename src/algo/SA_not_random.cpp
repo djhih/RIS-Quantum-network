@@ -90,22 +90,22 @@ struct Solution{ //sol_current; sol_ans; sol_opt
 
 double calculate_WFI(Solution& sol)
 {
-    double nu, de;  // Numerator, Denominator
-    // cout << "\n";
+    double nu = 0.0, de = 0.0;  // 初始化
     for(int i=0; i<I; i++)
     {
         int k = sol.match[i];
-        // if(k != -1)
-            // cout << "user_" << i << ": RIS_" << k << "\n";
-        // else
-            // cout << "user_" << i << ": not served\n";
-        double RE2E_i = prob_en[i][k]*sol.Rin[i];
-        nu += RE2E_i;
-        de += pow(RE2E_i, 2)/w[i];
+        if (k != -1) {  // 檢查是否已分配
+            double RE2E_i = prob_en[i][k]*sol.Rin[i];
+            nu += RE2E_i;
+            if (w[i] > 0) {  // 避免除以零
+                de += pow(RE2E_i, 2)/w[i];
+            }
+        }
     }
-    double cal_WFI = pow(nu, 2)/de;
-    // cout << "WFI: " << cal_WFI << "\n";
-    return cal_WFI;
+    if (de > 0) {  // 避免除以零
+        return pow(nu, 2)/de;
+    }
+    return 0.0;
 }
 
 void checkpoint(Solution& sol, int k)
