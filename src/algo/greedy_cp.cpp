@@ -47,6 +47,7 @@ void greedy(){
         }
     }
 }
+
 /* --- output result --- */
 void output_accept(){
     ofstream out(outfile);
@@ -57,19 +58,25 @@ void output_accept(){
     out << "Accepted assignment: " << endl;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        out << "User " << i << " is assigned to RIS " << k << endl;
+        out << "User " << i << " is assigned to RIS " << k;
+        out << " s = " << R_user_max[i] * (n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]));
+        out << " R_user_max " << R_user_max[i] << " prob_en " << prob_en[i][k] << " prob_pur " << prob_pur[i][k];
+        out << " n_pairs " << n_pairs[i][k] << endl;
     }
     out << "Total number of accepted assignment: " << accept_assign.size() << endl;
     double obj = 0;
+    double tmp_power = 0;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
         obj += w[i] * R_user_max[i];
+        tmp_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        // out << "obj " << obj << " tmp_power " << tmp_power << endl;
     }
     out << "Objective value: " << obj << endl;
     double total_power = 0;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        total_power += R_user_max[i] * (n_pairs[i][k]+1) / (prob_en[i][k] * prob_pur[i][k]);
+        total_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
     }
     out << "Total power usage: " << total_power << endl;
 }
@@ -96,6 +103,8 @@ void input_dataset(){
         for(int j = 0; j < K; j++){ 
             // assumtion: n_pairs[i][j] > 0, prob_pur[i][j] = 1 when we not doing purification
             in >> prob_en[i][j] >> prob_pur[i][j] >> n_pairs[i][j]; 
+            assert(prob_en[i][j] > 0 && prob_pur[i][j] > 0);
+            assert(prob_en[i][j] <= 1 && prob_pur[i][j] <= 1);
         }
     }
     for(int k = 0; k < K; k++){
@@ -105,6 +114,13 @@ void input_dataset(){
         for(int i = 0; i < num_served; i++){
             in >> ris_served_user[k][i];
             can_serve[{k, ris_served_user[k][i]}] = 1;
+        }
+    }
+    for(int k = 0; k < K; k++){
+        for(int i = 0; i < I; i++){
+            if(can_serve.count({k, i}) == 0){
+                n_pairs[i][k] = INF;
+            }
         }
     }
     in.close();

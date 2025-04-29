@@ -75,7 +75,7 @@ void output_accept(){
             cout << "Error: prob_en or prob_pur is 0." << endl;
             exit(1);
         }
-        total_power += R_user_max[i] * (n_pairs[i][k]+1) / (prob_en[i][k] * prob_pur[i][k]);
+        total_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
     }
     out << "Total power usage: " << total_power << endl;
 }
@@ -110,6 +110,13 @@ void input_dataset(){
         for(int i = 0; i < num_served; i++){
             in >> ris_served_user[k][i];
             can_serve[{k, ris_served_user[k][i]}] = 1;
+        }
+    }
+    for(int k = 0; k < K; k++){
+        for(int i = 0; i < I; i++){
+            if(can_serve.count({k, i}) == 0){
+                n_pairs[i][k] = INF;
+            }
         }
     }
     in.close();

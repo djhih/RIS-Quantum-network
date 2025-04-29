@@ -172,7 +172,7 @@ double solver(){
                 }
 
                 cout << "user " << i << " power : " << R_user[i][k] << '\n';
-                cout << "x : i " << i << " k " << k << " decision " << x[i][k] << " obj " << w[i] * r_w[i][k] * R_user[i][k] << " w' : "<< w[i] * r_w[i][k] <<" w : " << w[i] <<" r_w "<<r_w[i][k] <<" max rate "<<R_user_max[i] <<" user rate "<<r_w[i][k]*R_user[i][k]<< '\n';
+                cout << "x : i " << i << " k " << k << " decision " << x[i][k] << " obj " << w[i] * r_w[i][k] * R_user[i][k] << " s : "<< s[i][k] <<" v : " << V[i] << '\n';
             
             }
         }

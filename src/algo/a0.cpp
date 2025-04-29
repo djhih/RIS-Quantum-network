@@ -80,14 +80,48 @@ void data_process(){
     //   then check if it's a user-ris1, user-ris2 pair
     //   if not, then exit
     //   if yes, then try to move one to the lower power used pair
+
     if(rem_pair_x.size() == 2){
         auto it1 = rem_pair_x.begin();
         auto it2 = ++rem_pair_x.begin();
         auto [i1, k1] = it1->first;
         auto [i2, k2] = it2->first;
-        if(i1 != i2){
+        if(i1 != i2 && k1 != k2){
+            cout << "user " << i1 << " is assigned to RIS " << k1 << " = " << it1->second << endl;
+            cout << "user " << i2 << " is assigned to RIS " << k2 << " = " << it2->second << endl;
             cout << "Error: Remaining pairs are not user-ris1, user-ris2 pair." << endl;
             exit(1);
+        } else if(i1 != i2 && k1 == k2){
+            double power1 = R_user_max[i1] * n_pairs[i1][k1] / (prob_en[i1][k1] * prob_pur[i1][k1]);
+            double power2 = R_user_max[i2] * n_pairs[i2][k2] / (prob_en[i2][k2] * prob_pur[i2][k2]);
+            double current_useage = 0;
+            for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+                auto [i, k] = *it;
+                current_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+            }
+            if(power1 > power2){
+                // move power from k1 to k2
+                if(power2 + current_useage > R_bs_max){
+                    cout << "Overload: Cannot move power from k1 to k2." << endl;
+                    exit(1);
+                }
+                cout << "accept size " << accept_assign.size() << endl;
+                accept_assign.push_back({i2, k2});
+                compare_pair = {i1, k1};
+                cout << "push back " << i2 << " " << k2 << endl;
+                cout << "accept size " << accept_assign.size() << endl;
+            } else {
+                // move power from k2 to k1
+                if(power1 + current_useage > R_bs_max){
+                    cout << "Error: Cannot move power from k2 to k1." << endl;
+                    exit(1);
+                }
+                cout << "accept size " << accept_assign.size() << endl;
+                accept_assign.push_back({i1, k1});
+                compare_pair = {i2, k2};
+                cout << "push back " << i1 << " " << k1 << endl;
+                cout << "accept size " << accept_assign.size() << endl;
+            }
         } else {
             // try move power from one to another
             double power1 = R_user_max[i1] * n_pairs[i1][k1] / (prob_en[i1][k1] * prob_pur[i1][k1]);
@@ -136,12 +170,46 @@ void compare(){
         auto [i, k] = *it;
         cur_obj += w[i] * R_user_max[i];
     }
+
     double compare_obj = 0;
     auto [i, k] = compare_pair;
     compare_obj += w[i] * R_user_max[i];
+    
+    double cmp_useage = 0;
+    cmp_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+    
+    vector<pair<int, int>> cmp_pairs;
+    cmp_pairs.push_back(compare_pair);
+
+    // sort cmp_usage by cp_value = w[i] * (prob_en[i][k] * prob_pur[i][k]) / n_pairs[i][k];
+    sort(accept_assign.begin(), accept_assign.end(), [](pair<int, int> a, pair<int, int> b){
+        auto [i1, k1] = a;
+        auto [i2, k2] = b;
+        return (w[i1] * (prob_en[i1][k1] * prob_pur[i1][k1]) / n_pairs[i1][k1]) > (w[i2] * (prob_en[i2][k2] * prob_pur[i2][k2]) / n_pairs[i2][k2]);
+    });
+
+    // try to add more ans from accept_assign
+    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+        auto [i, k] = *it;
+        // count usage if we add this pair
+        cmp_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+        if(cmp_useage > R_bs_max){
+            cmp_useage -= R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+            continue;
+        } else {
+            cmp_pairs.push_back({i, k});
+            compare_obj += w[i] * R_user_max[i];
+        }
+    }
+    cout << "cmp useage " << cmp_useage << endl;
+    cout << "compare obj " << compare_obj << endl;
     if(compare_obj > cur_obj){
-        accept_assign.erase(accept_assign.begin(), accept_assign.end());
-        accept_assign.push_back(compare_pair);
+        // cout << "cur obj " << cur_obj << endl;
+        // cout << "compare obj " << compare_obj << endl;
+        // accept_assign.erase(accept_assign.begin(), accept_assign.end());
+        // accept_assign.push_back(compare_pair);
+        accept_assign.clear();
+        accept_assign = cmp_pairs;
     }
     return;
 
@@ -154,6 +222,7 @@ void output_accept(){
         cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
         exit(1);
     }
+    cout << "accept size " << accept_assign.size() << endl;
     out << "Accepted assignment: " << endl;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
