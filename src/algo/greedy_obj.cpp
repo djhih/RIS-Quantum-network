@@ -82,7 +82,7 @@ void output_accept(){
 void input_dataset(){
     ifstream in(infile);
     if(!in.is_open()){
-        cout << "Error: Cannot open file " << dataset_file << endl;
+        cout << "Error: Cannot open file " << infile << endl;
         exit(1);
     }
     in >> I >> K;

@@ -192,7 +192,7 @@ void input_solver_gen_data(string solver_gen_file = "data/res/res_solver.txt"){
 void input_dataset(){
     ifstream in(infile);
     if(!in.is_open()){
-        cout << "Error: Cannot open file " << dataset_file << endl;
+        cout << "Error: Cannot open file " << infile << endl;
         exit(1);
     }
     in >> I >> K;

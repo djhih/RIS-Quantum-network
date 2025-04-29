@@ -21,7 +21,7 @@ string infile = "data/raw/dataset.txt";
 string outfile = "data/res/res_solver.txt";
 
 /* --- input from dataset --- */
-void input_dataset(infile){
+void input_dataset(){
     ifstream in(infile);
     if(!in.is_open()){
         cout << "Error: Cannot open file " << infile << endl;
