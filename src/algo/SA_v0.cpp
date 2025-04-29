@@ -193,7 +193,7 @@ void checkpoint(Solution& sol, int k)
     cout << "\n";*/
 }
 
-void rate_distribution(Solution& sol, int k, Solution& old_sol, int initial)
+void rate_distribution(Solution& sol, int k, Solution& old_sol)
 {
     // cout << "\n\nRIS_" << k << ":" << endl;
     // cout << "\nrandom_rate_distribute!\n";
@@ -218,18 +218,13 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol, int initial)
             }
         }
 
-        if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || can_serve == 0 )
+        if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || can_serve == 0 || sol.Rin_left < R_user_max[i] )
         {
             sol.Rin[i] = 0;
         }
-        else if( j == sol.user_left.size()-1 ) // last user take all that is left
+        else if
         {
-            sol.Rin[i] = min(sol.Rin_left*prob_en[i][k], R_user_max[i]);
-        }
-        else
-        {
-            uniform_int_distribution<> dis(0, min(sol.Rin_left*prob_en[i][k], R_user_max[i]));
-            sol.Rin[i] = dis(gen);
+            sol.Rin[i] = R_user_max[i];
         }
         sol.Rin_left -= sol.Rin[i]/prob_en[i][k];
         // cout << "user" << i << ": " << sol.Rin[i] << "  ";
@@ -312,7 +307,7 @@ void SA()
             int i = sol_current.user_left[j];
             sol_current.match[i] = ris_table[k];
         }
-        rate_distribution(sol_current, ris_table[k], sol_current, 1);
+        rate_distribution(sol_current, ris_table[k], sol_current);
         checkpoint(sol_current, ris_table[k]);
     }
     sol_current.WFI = calculate_WFI(sol_current);
@@ -365,7 +360,7 @@ void SA()
                     int i = sol_new.user_left[j];
                     sol_new.match[i] = ris_table[k]; // k;
                 }
-                rate_distribution(sol_new, ris_table[k], sol_current, 0); // random_rate_distribute(sol_new, ris_table[k]);
+                rate_distribution(sol_new, ris_table[k], sol_current); // random_rate_distribute(sol_new, ris_table[k]);
                 checkpoint(sol_new, ris_table[k]); // check_fidelity_capaticy(sol_new, ris_table[k]);
             }
 
@@ -434,7 +429,7 @@ void output_accept(){
     double obj = 0;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        obj += w[i] * R_user_max[i] * R_user[i] / R_user_max[i];
+        obj += w[i] * R_user_max[i] * R_user[i] / R_user_max[i] ;
     }
     out << "Objective value: " << obj << endl;
     double total_power = 0;
