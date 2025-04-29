@@ -434,7 +434,7 @@ void output_accept(){
     double obj = 0;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        obj += w[i] * R_user_max[i];
+        obj += w[i] * R_user_max[i] * R_user[i] / R_user_max[i];
     }
     out << "Objective value: " << obj << endl;
     double total_power = 0;
