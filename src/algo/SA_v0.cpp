@@ -16,12 +16,16 @@ int I, K;
 double R_bs_max;
 vector<double> R_user_max, w;
 vector<vector<double>> prob_en, prob_pur, n_pairs; // s_ik
-vector<vector<int>> ris_served_user;
 vector<pair<int, int>>accept_assign; // ris_assign[i] = k, user_assign[k] = i
 double R_user[100];
 // double R_user[100][100]; // R_user[i][k] \in [0, R_user_max[i]]: rate of user i with RIS k
 double cur_power_used = 0;
+vector<vector<int>> ris_served_user;
+// map<pair<int, int>, int> can_serve;
 
+
+string infile = "data/raw/dataset.txt";
+string outfile = "data/res/res_greedy_cp.txt";
 
 // L: # of iterations
 // I: # of users
@@ -204,17 +208,17 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol, int initial)
     {
         int i = sol.user_left[j];
 
-        int found = 0;  // check whether RIS k can serve user i
+        int can_serve = 0;  // check whether RIS k can serve user i
         for(int user : ris_served_user[k])
         {
             if (user == i)
             {
-                found = 1;
+                can_serve = 1;
                 break;
             }
         }
 
-        if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || found == 0 )
+        if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || can_serve == 0 )
         {
             sol.Rin[i] = 0;
         }
@@ -222,15 +226,10 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol, int initial)
         {
             sol.Rin[i] = min(sol.Rin_left*prob_en[i][k], R_user_max[i]);
         }
-        else if( initial == 0 || bit == 1 )
+        else
         {
             uniform_int_distribution<> dis(0, min(sol.Rin_left*prob_en[i][k], R_user_max[i]));
             sol.Rin[i] = dis(gen);
-            bit = 0;
-        }
-        else
-        {
-            sol.Rin[i] = old_sol.Rin[i];
         }
         sol.Rin_left -= old_sol.Rin[i]/prob_en[i][k];
         // cout << "user" << i << ": " << sol.Rin[i] << "  ";
@@ -419,13 +418,11 @@ void SA()
     // cout << "------------------\n\n";
 }
 
-
 /* --- output result --- */
 void output_accept(){
-
-    ofstream out("data/res/res_SA_cp.txt");
+    ofstream out(outfile);
     if(!out.is_open()){
-        cout << "Error: Cannot open file data/output/res_SA_cp.txt" << endl;
+        cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
         exit(1);
     }
     out << "Accepted assignment: " << endl;
@@ -449,9 +446,11 @@ void output_accept(){
     out << "Total power usage: " << total_power << endl;
 }
 
+
+
 /* --- input from dataset --- */
-void input_dataset(string dataset_file = "data/raw/dataset.txt"){
-    ifstream in(dataset_file);
+void input_dataset(){
+    ifstream in(infile);
     if(!in.is_open()){
         cout << "Error: Cannot open file " << dataset_file << endl;
         exit(1);
@@ -467,10 +466,8 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
     for(int i = 0; i < I; i++){ in >> w[i] >> R_user_max[i]; }
     for(int i = 0; i < I; i++){
         for(int j = 0; j < K; j++){
+            // assumtion: n_pairs[i][j] > 0, prob_pur[i][j] = 1 when we not doing purification
             in >> prob_en[i][j] >> prob_pur[i][j] >> n_pairs[i][j];
-            if(prob_pur[i][j] == 0){
-                prob_pur[i][j] = 1;
-            }
         }
     }
     for(int k = 0; k < K; k++){
@@ -479,42 +476,22 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
         ris_served_user.push_back(vector<int>(num_served));
         for(int i = 0; i < num_served; i++){
             in >> ris_served_user[k][i];
+            can_serve[{k, ris_served_user[k][i]}] = 1;
         }
     }
     in.close();
 }
 
-/*void input_dataset(string dataset_file = "data/raw/dataset.txt"){
-    ifstream in(dataset_file);
-    if(!in.is_open()){
-        cout << "Error: Cannot open file " << dataset_file << endl;
-        exit(1);
-    }
-    in >> I >> K;
-    in >> R_bs_max;
-    R_user_max.resize(I);
-    w.resize(I);
-    prob_en.resize(I, vector<double>(K));
-    prob_pur.resize(I, vector<double>(K));  // no
-    n_pairs.resize(I, vector<double>(K));   // no
-
-    for(int i = 0; i < I; i++){ in >> w[i] >> R_user_max[i]; }
-
-    // not used
-    for(int i = 0; i < I; i++){
-        for(int j = 0; j < K; j++){
-            in >> prob_en[i][j] >> prob_pur[i][j] >> n_pairs[i][j];
-            if(prob_pur[i][j] == 0){
-                prob_pur[i][j] = 1;
-            }
-        }
-    }
-    in.close();
-}*/
-
 int main()
 {
+    if(argc != 3){
+        cout << "Usage: ./greedy_cp <infile> <outfile>" << endl;
+        exit(1);
+    }
+    infile = argv[1];
+    outfile = argv[2];
     input_dataset();
     SA();
     output_accept();
+    return 0;
 }
