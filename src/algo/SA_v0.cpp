@@ -16,10 +16,12 @@ int I, K;
 double R_bs_max;
 vector<double> R_user_max, w;
 vector<vector<double>> prob_en, prob_pur, n_pairs; // s_ik
+vector<vector<int>> ris_served_user;
 vector<pair<int, int>>accept_assign; // ris_assign[i] = k, user_assign[k] = i
 double R_user[100];
 // double R_user[100][100]; // R_user[i][k] \in [0, R_user_max[i]]: rate of user i with RIS k
 double cur_power_used = 0;
+
 
 // L: # of iterations
 // I: # of users
@@ -46,9 +48,9 @@ mt19937 gen(42);
 /* --- SA --- */
 int L = 5; // # of iterations
 int m_k = 1; // # of users each RIS can serve
-double T = 5;
+double T = 10;
 double Tmin = 1;
-double T_alpha = 0.6;
+double T_alpha = 0.95;
 
 struct Vec{
     double x, y;
@@ -187,17 +189,32 @@ void checkpoint(Solution& sol, int k)
     cout << "\n";*/
 }
 
-void rate_distribution(Solution& sol, int k)
+void rate_distribution(Solution& sol, int k, Solution& old_sol, int initial)
 {
     // cout << "\n\nRIS_" << k << ":" << endl;
     // cout << "\nrandom_rate_distribute!\n";
 
     // cout << sol.Rin_left << " rate left\n" << sol.user_left.size() << " users left\n";
 
+    // uniform_int_distribution<> dis(0, 1); // decide whether to keep that answer
+    // int bit = dis(gen);
+    int bit = 1;
+
     for(int j=0; j<sol.user_left.size(); j++)
     {
         int i = sol.user_left[j];
-        if( sol.Rin_left == 0 || n_pairs[i][k]+1 > 1)
+
+        int found = 0;  // check whether RIS k can serve user i
+        for(int user : ris_served_user[k])
+        {
+            if (user == i)
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || found == 0 )
         {
             sol.Rin[i] = 0;
         }
@@ -205,12 +222,17 @@ void rate_distribution(Solution& sol, int k)
         {
             sol.Rin[i] = min(sol.Rin_left*prob_en[i][k], R_user_max[i]);
         }
-        else
+        else if( initial == 0 || bit == 1 )
         {
             uniform_int_distribution<> dis(0, min(sol.Rin_left*prob_en[i][k], R_user_max[i]));
             sol.Rin[i] = dis(gen);
+            bit = 0;
         }
-        sol.Rin_left -= sol.Rin[i]/prob_en[i][k];
+        else
+        {
+            sol.Rin[i] = old_sol.Rin[i];
+        }
+        sol.Rin_left -= old_sol.Rin[i]/prob_en[i][k];
         // cout << "user" << i << ": " << sol.Rin[i] << "  ";
     }
     // cout << "R_bs_rate left: "<< sol.Rin_left << "\n\n";
@@ -291,7 +313,7 @@ void SA()
             int i = sol_current.user_left[j];
             sol_current.match[i] = ris_table[k];
         }
-        rate_distribution(sol_current, ris_table[k]);
+        rate_distribution(sol_current, ris_table[k], sol_current, 1);
         checkpoint(sol_current, ris_table[k]);
     }
     sol_current.WFI = calculate_WFI(sol_current);
@@ -344,8 +366,8 @@ void SA()
                     int i = sol_new.user_left[j];
                     sol_new.match[i] = ris_table[k]; // k;
                 }
-                rate_distribution(sol_current, ris_table[k]); // random_rate_distribute(sol_new, ris_table[k]);
-                checkpoint(sol_current, ris_table[k]); // check_fidelity_capaticy(sol_new, ris_table[k]);
+                rate_distribution(sol_new, ris_table[k], sol_current, 0); // random_rate_distribute(sol_new, ris_table[k]);
+                checkpoint(sol_new, ris_table[k]); // check_fidelity_capaticy(sol_new, ris_table[k]);
             }
 
             // calculate WFI & WFI_diff
@@ -403,7 +425,7 @@ void output_accept(){
 
     ofstream out("data/res/res_SA_cp.txt");
     if(!out.is_open()){
-        cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
+        cout << "Error: Cannot open file data/output/res_SA_cp.txt" << endl;
         exit(1);
     }
     out << "Accepted assignment: " << endl;
@@ -421,13 +443,48 @@ void output_accept(){
     double total_power = 0;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        total_power += R_user[i] * (n_pairs[i][k]+1) / (prob_en[i][k]); // need modification
+        total_power += R_user[i] * (n_pairs[i][k]) / (prob_en[i][k]); // need modification
        //  total_power += R_user_max[i] * (n_pairs[i][k]+1) / (prob_en[i][k] * prob_pur[i][k]);
     }
     out << "Total power usage: " << total_power << endl;
 }
 
+/* --- input from dataset --- */
 void input_dataset(string dataset_file = "data/raw/dataset.txt"){
+    ifstream in(dataset_file);
+    if(!in.is_open()){
+        cout << "Error: Cannot open file " << dataset_file << endl;
+        exit(1);
+    }
+    in >> I >> K;
+    in >> R_bs_max;
+    R_user_max.resize(I);
+    w.resize(I);
+    prob_en.resize(I, vector<double>(K));
+    prob_pur.resize(I, vector<double>(K));
+    n_pairs.resize(I, vector<double>(K));
+
+    for(int i = 0; i < I; i++){ in >> w[i] >> R_user_max[i]; }
+    for(int i = 0; i < I; i++){
+        for(int j = 0; j < K; j++){
+            in >> prob_en[i][j] >> prob_pur[i][j] >> n_pairs[i][j];
+            if(prob_pur[i][j] == 0){
+                prob_pur[i][j] = 1;
+            }
+        }
+    }
+    for(int k = 0; k < K; k++){
+        int num_served;
+        in >> num_served;
+        ris_served_user.push_back(vector<int>(num_served));
+        for(int i = 0; i < num_served; i++){
+            in >> ris_served_user[k][i];
+        }
+    }
+    in.close();
+}
+
+/*void input_dataset(string dataset_file = "data/raw/dataset.txt"){
     ifstream in(dataset_file);
     if(!in.is_open()){
         cout << "Error: Cannot open file " << dataset_file << endl;
@@ -453,7 +510,7 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
         }
     }
     in.close();
-}
+}*/
 
 int main()
 {
