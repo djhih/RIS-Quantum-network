@@ -179,7 +179,7 @@ void checkpoint(Solution& sol, int k)
         int i = sol.user_left[j];
         if(i != pick_user_id) // remove
         {
-            sol.Rin_left += sol.Rin[i]*prob_en[i][k];
+            sol.Rin_left += sol.Rin[i]/prob_en[i][k];
             sol.match[i] = -1;
             sol.Rin[i] = 0;
         }
