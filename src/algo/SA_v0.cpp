@@ -50,7 +50,7 @@ int L = 5; // # of iterations
 int m_k = 1; // # of users each RIS can serve
 double T = 5;
 double Tmin = 1;
-double T_alpha = 0.6;
+double T_alpha = 0.8;
 
 struct Vec{
     double x, y;
