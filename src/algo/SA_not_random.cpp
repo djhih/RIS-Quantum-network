@@ -201,10 +201,11 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol, int fix_label)
     // cout << sol.Rin_left << " rate left\n" << sol.user_left.size() << " users left\n";
 
     // fix --> whether we modify it
+    int fix;
     if(fix_label != -1 && fix_label < K/2) //(fix_label == 0)
-        int fix == 1;
+        fix = 1;
     else
-        int fix == 0;
+        fix = 0;
 
     for(int j=0; j<sol.user_left.size(); j++)
     {
