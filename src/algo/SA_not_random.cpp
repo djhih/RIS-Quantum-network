@@ -225,7 +225,7 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol, int fix_label)
         {
             sol.Rin[i] = old_sol.Rin[i];
         }
-        else if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || can_serve == 0 || sol.Rin_left < R_user_max[i] )
+        else if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || can_serve == 0 || sol.Rin_left*prob_en[i][k] < R_user_max[i] )
         {
             sol.Rin[i] = 0;
         }
