@@ -19,7 +19,7 @@ from typing import List, Dict, Optional
 # -------------------------------
 OUTPUT_FOLDER = "run/plot/image/"
 
-line_colors = ["#000000", "#00EC00","#d62728","#0000C6", "#00EC00", "#d62728"]
+line_colors = ["#000000", "#00EC00","#d62728","#0000C6", "#FF7F0E", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
 # marker_types = ["h", "o", "^", "d", "D"]
 
 plt_graph_settings: dict = { 
@@ -109,12 +109,41 @@ class AlgorithmData:
         """
         self.algorithm = algorithm
         self.file_list = file_list
+        self.avg_file = f"data/res/avg/{algorithm}_avg.txt"
         self.x_label = x_label
         self.y_label = y_label
         self.x: List[float] = []  # 利用檔名中的數字作為 x 軸資料（例如執行編號）
         self.y: List[float] = []  # 從檔案中讀取的總生產速率
         self.output_filename = f"res_{algorithm}_user_rate.png"
-        self.read_files()
+        self.read_avg_file()
+
+    def read_avg_file(self):
+        try:
+            with open(self.avg_file, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+        except Exception as e:
+            if logger_available:
+                logger.logger.error(f"讀取檔案 {self.avg_file} 發生錯誤：{e}")
+            else:
+                logger.error(f"讀取檔案 {self.avg_file} 發生錯誤：{e}")
+            return
+        
+        # Extract rates from each line of the average file
+        rates = []
+        for line in lines:
+            try:
+                # Parse the floating point number from each line
+                rate = float(line.strip())
+                rates.append(rate)
+            except ValueError as e:
+                if logger_available:
+                    logger.logger.warning(f"無法解析行 '{line.strip()}': {e}")
+                else:
+                    logger.warning(f"無法解析行 '{line.strip()}': {e}")
+
+        # Store the extracted rates
+        self.y = rates
+        # Note: x values will need to be set separately with set_x() method
 
     def read_files(self):
         for i, file in enumerate(self.file_list):
@@ -161,39 +190,40 @@ class AlgorithmData:
 
         return 0.0
 
+            
+
 def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
-    """繪製比較不同算法的圖表
-    
-    Args:
-        dataset_ids: 數據集識別碼列表
-        persat: 每顆衛星的數值 (用於檔名)
-        req: 請求數量 (用於檔名)
-        sat_counts: 實際衛星數量列表 (作為 X 軸)
-    """
+
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     
     # 根據檔名規則建立各算法的檔案列表
     filepath = os.path.join("data", "res")
-    dataset_ids = [1, 2, 3, 4, 5]
-    cp_files = [os.path.join(filepath, f"res_greedy_cp_{i}.txt") for i in range(1, 6)]
-    w_files = [os.path.join(filepath, f"res_greedy_w_{i}.txt") for i in range(1, 6)]
-    obj_files = [os.path.join(filepath, f"res_greedy_obj_{i}.txt") for i in range(1, 6)]
-    a0_files = [os.path.join(filepath, f"res_a0_{i}.txt") for i in range(1, 6)]
+    dataset_ids = [100, 200, 300, 400, 500]
+    cp_files = [os.path.join(filepath, f"greedy_cp_{i}_1.txt") for i in range(1, 6)]
+    w_files = [os.path.join(filepath, f"greedy_w_{i}_1.txt") for i in range(1, 6)]
+    obj_files = [os.path.join(filepath, f"greedy_obj_{i}_1.txt") for i in range(1, 6)]
+    a0_files = [os.path.join(filepath, f"a0_{i}_1.txt") for i in range(1, 6)]
+    sa_files = [os.path.join(filepath, f"SA_not_random_{i}_1.txt") for i in range(1, 6)]
+    ilp_files = [os.path.join(filepath, f"ILP_{i}_1.txt") for i in range(1, 6)]
 
-    x_label = "Data Set Id"
-    y_label = "Objective Value"
+    x_label = "# UEs |I|"
+    y_label = "Objective"
 
     # 建立各算法的資料物件
     data_cp = AlgorithmData("greedy_cp", cp_files, x_label=x_label, y_label=y_label)
     data_w = AlgorithmData("greedy_w", w_files, x_label=x_label, y_label=y_label)
     data_obj = AlgorithmData("greedy_obj", obj_files, x_label=x_label, y_label=y_label)
     data_a0 = AlgorithmData("a0", a0_files, x_label=x_label, y_label=y_label)
+    data_sa = AlgorithmData("SA_not_random", sa_files, x_label=x_label, y_label=y_label)
+    data_ilp = AlgorithmData("ILP", ilp_files, x_label=x_label, y_label=y_label)
 
     # 設定 x 軸的值
     data_cp.set_x(dataset_ids)
     data_w.set_x(dataset_ids)
     data_obj.set_x(dataset_ids)
     data_a0.set_x(dataset_ids)
+    data_sa.set_x(dataset_ids)
+    data_ilp.set_x(dataset_ids)
 
     # 建立圖表並應用完整設定
     plt.rcParams.update(plt_graph_settings["andy_theme"])
@@ -215,7 +245,7 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     cp_settings.update({"marker": 'x', "markersize": 12, "markeredgewidth": 2.5})
     if len(data_cp.x) > 0 and len(data_cp.y) > 0:
         ax.plot(data_cp.x, data_cp.y,
-                label="GREEDY_CP",
+                label="HRF",
                 color=line_colors[0],
                 **cp_settings)
 
@@ -223,7 +253,7 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     w_settings.update({"marker": "o", "markersize": 10, "markeredgewidth": 2.5, "markerfacecolor": "none" })
     if len(data_w.x) > 0 and len(data_w.y) > 0:
         ax.plot(data_w.x, data_w.y,
-                label="GREEDY_W",
+                label="HVF",
                 color=line_colors[1],
                 **w_settings)
 
@@ -231,7 +261,7 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     obj_settings.update({"marker": "d", "markersize": 12, "markeredgewidth": 2.5,"markerfacecolor": "none"})
     if len(data_obj.x) > 0 and len(data_obj.y) > 0:
         ax.plot(data_obj.x, data_obj.y,
-                label="GREEDY_OBJ",
+                label="HWF",
                 color=line_colors[2],
                 **obj_settings)
 
@@ -239,9 +269,25 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     a0_settings.update({"marker": "^", "markersize": 12, "markeredgewidth": 2.5,"markerfacecolor": "none" })
     if len(data_a0.x) > 0 and len(data_a0.y) > 0:
         ax.plot(data_a0.x, data_a0.y,
-                label="A0",
+                label="RELIC",
                 color=line_colors[3],
                 **a0_settings)
+    
+    sa_settings = plt_graph_settings["ax1_settings"].copy()
+    sa_settings.update({"marker": "h", "markersize": 12, "markeredgewidth": 2.5,"markerfacecolor": "none" })
+    if len(data_sa.x) > 0 and len(data_sa.y) > 0:
+        ax.plot(data_sa.x, data_sa.y,
+                label="SA",
+                color=line_colors[4],
+                **sa_settings)
+        
+    ilp_settings = plt_graph_settings["ax1_settings"].copy()
+    ilp_settings.update({"marker": "D", "markersize": 12, "markeredgewidth": 2.5,"markerfacecolor": "none" })
+    if len(data_ilp.x) > 0 and len(data_ilp.y) > 0:
+        ax.plot(data_ilp.x, data_ilp.y,
+                label="ILP",
+                color=line_colors[5],
+                **ilp_settings)
 
     # 設定刻度與軸標籤位置
     ax.tick_params(**plt_graph_settings["ax1_tick_settings"])
@@ -255,8 +301,8 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     plt.setp(ax.get_yticklabels(), **plt_graph_settings["plt_yticks_settings"])
     
     # 設定 x 軸的刻度
-    # xticks = [80,90,100,110,120]
-    # ax.set_xticks(xticks)
+    xticks = [100, 200, 300, 400, 500]
+    ax.set_xticks(xticks)
     
     # 設定 x 軸的範圍正好是第一個刻度到最後一個刻度
     # ax.set_xlim([xticks[0], xticks[-1]])
