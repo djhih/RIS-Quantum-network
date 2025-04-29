@@ -139,17 +139,18 @@ bool check_served(double angle_user, double angle_bs, double dis){
 } 
 
 int main(int argc, char *argv[]){
-    if(argc != 6){
-        cout << "Usage: ./gen <I> <K> <R_bs_max> <fidelity_threshold> <avg_load>" << endl;
+    if(argc != 7){
+        cout << "Usage: ./gen <datasetfile> <I> <K> <R_bs_max> <fidelity_threshold> <avg_load>" << endl;
         exit(1);
     }
-    I = atoi(argv[1]);
-    K = atoi(argv[2]);
-    R_bs_max = atof(argv[3]);
-    fidelity_threshold = atof(argv[4]);
-    double avg_load = atof(argv[5]);
+    string dataset_file = argv[1];
+    I = atoi(argv[2]);
+    K = atoi(argv[3]);
+    R_bs_max = atof(argv[4]);
+    fidelity_threshold = atof(argv[5]);
+    double avg_load = atof(argv[6]);
 
-    ofstream out("data/raw/dataset.txt");
+    ofstream out(dataset_file);
     if(!out.is_open()){
         cout << "Error: Cannot open file raw/dataset.txt" << endl;
         exit(1);
