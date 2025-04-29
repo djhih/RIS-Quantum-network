@@ -222,7 +222,7 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol)
         {
             sol.Rin[i] = 0;
         }
-        else if
+        else
         {
             sol.Rin[i] = R_user_max[i];
         }
