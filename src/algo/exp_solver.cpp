@@ -17,11 +17,14 @@ vector<double> V;
 vector<vector<double>> s, r_w, R_user, x;
 map<pair<int, int>, int> can_serve; // serve_map[k, i] = 1: k can serve to i
 
+string infile = "data/raw/dataset.txt";
+string outfile = "data/res/res_solver.txt";
+
 /* --- input from dataset --- */
-void input_dataset(string dataset_file = "data/raw/dataset.txt"){
-    ifstream in(dataset_file);
+void input_dataset(infile){
+    ifstream in(infile);
     if(!in.is_open()){
-        cout << "Error: Cannot open file " << dataset_file << endl;
+        cout << "Error: Cannot open file " << infile << endl;
         exit(1);
     }
     in >> I >> K;
@@ -139,7 +142,7 @@ double solver(){
         double obj_value = model.get(GRB_DoubleAttr_ObjVal);        
         
         // get solution
-        ofstream out("data/res/res_solver.txt");
+        ofstream out(outfile);
         if(!out.is_open()){
             cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
             exit(1);
@@ -183,7 +186,13 @@ double solver(){
     }
 }
 
-int main(){
+int main(int argc, char *argv[]){
+    if(argc != 3){
+        cout << "Usage: ./solver <datasetfile> <outfile>" << endl;
+        exit(1);
+    }
+    infile = argv[1];
+    outfile = argv[2];
     input_dataset();
     data_process();
     solver();

@@ -13,6 +13,9 @@ double cur_power_used = 0; // current power used by BS
 vector<vector<int>> ris_served_user; // ris_served_user[k] = i, user_served[i] = k
 map<pair<int, int>, int> can_serve; // serve_map[k, i] = 1: k can serve to i
 
+string infile = "data/raw/dataset.txt";
+string outfile = "data/res/res_greedy_w.txt";
+
 /* --- greedy --- */
 // greedy using w[i]
 void greedy(){
@@ -48,7 +51,7 @@ void greedy(){
 
 /* --- output result --- */
 void output_accept(){
-    ofstream out("data/res/res_greedy_w.txt");
+    ofstream out(outfile);
     if(!out.is_open()){
         cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
         exit(1);
@@ -79,8 +82,8 @@ void output_accept(){
 
 
 /* --- input from dataset --- */
-void input_dataset(string dataset_file = "data/raw/dataset.txt"){
-    ifstream in(dataset_file);
+void input_dataset(){
+    ifstream in(infile);
     if(!in.is_open()){
         cout << "Error: Cannot open file " << dataset_file << endl;
         exit(1);
@@ -112,7 +115,13 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
     in.close();
 }
 
-int main(){
+int main(int argc, char* argv[]){
+    if(argc != 3){
+        cout << "Usage: ./greedy_w <datasetfile> <outfile>" << endl;
+        exit(1);
+    }
+    infile = argv[1];
+    outfile = argv[2];
     input_dataset();
     greedy();
     output_accept();

@@ -32,6 +32,9 @@ pair<int, int> compare_pair; // pair of user and RIS to compare
 map<pair<int, int>, int> can_serve; // serve_map[k, i] = 1: k can serve to i
 vector<vector<int>> ris_served_user; // ris_served_user[k] = i, user_served[i] = k
 
+string infile = "data/raw/dataset.txt";
+string outfile = "data/res/res_greedy_w.txt";
+
 /* --- process data from solver and do mathcing --- */
 void data_process(){
     map<pair<int, int>, double> rem_pair_x;
@@ -146,7 +149,7 @@ void compare(){
 
 /* --- output result --- */
 void output_accept(){
-    ofstream out("data/output/res_a0.txt");
+    ofstream out(outfile);
     if(!out.is_open()){
         cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
         exit(1);
@@ -186,8 +189,8 @@ void input_solver_gen_data(string solver_gen_file = "data/res/res_solver.txt"){
 }
 
 /* --- input from dataset --- */
-void input_dataset(string dataset_file = "data/raw/dataset.txt"){
-    ifstream in(dataset_file);
+void input_dataset(){
+    ifstream in(infile);
     if(!in.is_open()){
         cout << "Error: Cannot open file " << dataset_file << endl;
         exit(1);
@@ -222,7 +225,13 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
     in.close();
 }
 
-int main(){
+int main(int argc, char *argv[]){
+    if(argc != 3){
+        cout << "Usage: ./greedy_w <datasetfile> <outfile>" << endl;
+        exit(1);
+    }
+    infile = argv[1];
+    outfile = argv[2];
     input_dataset();
     input_solver_gen_data();
     data_process();
