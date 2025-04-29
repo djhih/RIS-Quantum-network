@@ -484,7 +484,7 @@ void input_dataset(){
 int main(int argc, char *argv[])
 {
     if(argc != 3){
-        cout << "Usage: ./greedy_cp <infile> <outfile>" << endl;
+        cout << "Usage: ./SA_not_random <infile> <outfile>" << endl;
         exit(1);
     }
     infile = argv[1];
