@@ -48,7 +48,7 @@ mt19937 gen(42);
 /* --- SA --- */
 int L = 5; // # of iterations
 int m_k = 1; // # of users each RIS can serve
-double T = 5;
+double T = 15;
 double Tmin = 1;
 double T_alpha = 0.95;
 
