@@ -139,8 +139,8 @@ bool check_served(double angle_user, double angle_bs, double dis){
 } 
 
 int main(int argc, char *argv[]){
-    if(argc != 7){
-        cout << "Usage: ./gen <datasetfile> <I> <K> <R_bs_max> <fidelity_threshold> <avg_load>" << endl;
+    if(argc != 8){
+        cout << "Usage: ./gen <datasetfile> <I> <K> <R_bs_max> <fidelity_threshold> <avg_load> <seed>" << endl;
         exit(1);
     }
     string dataset_file = argv[1];
@@ -149,6 +149,7 @@ int main(int argc, char *argv[]){
     R_bs_max = atof(argv[4]);
     fidelity_threshold = atof(argv[5]);
     double avg_load = atof(argv[6]);
+    int seed = atoi(argv[7]);
 
     ofstream out(dataset_file);
     if(!out.is_open()){
@@ -158,9 +159,10 @@ int main(int argc, char *argv[]){
     
     random_device rd;
     // default_random_engine gen(rd());
-    default_random_engine gen(0);   // fixed seed for reproducibility
+    default_random_engine gen(seed);   // fixed seed for reproducibility
     uniform_int_distribution<> dist_int(0, 99);
     uniform_real_distribution<> dist_real(0, 100);
+    uniform_real_distribution<> dist_int2(0, 500);
 
     vector<User> users(I);
     vector<RIS> riss(K);
@@ -173,13 +175,13 @@ int main(int argc, char *argv[]){
     
     // Generate RIS locations and angles
     for(int k = 0; k < K; k++){
-        int x = dist_int(gen), y = dist_int(gen);
+        int x = dist_int2(gen), y = dist_int2(gen);
         do {
             uniform_real_distribution<> angle_dist(0, 2 * M_PI);
             double theta = angle_dist(gen);
 
-            x = dist_int(gen);
-            y = dist_int(gen);
+            x = dist_int2(gen);
+            y = dist_int2(gen);
             riss[k] = RIS(x, y, theta);
             
             double xx = riss[k].y() * (1.0 / tan(riss[k].theta));
@@ -201,20 +203,25 @@ int main(int argc, char *argv[]){
         users[i].dis_ris.resize(K);
         users[i].n_pairs.resize(K);
         
-        int x = dist_int(gen), y = dist_int(gen);
+        int x = dist_int2(gen), y = dist_int2(gen);
         bool served = false;
-        while(x == 0 && y == 0 && !served){
+        while((x == 0 && y == 0) || !served){
             for(int k = 0; k < K; k++){
                 pair<double, double> u_ris = {x - riss[k].x(), y - riss[k].y()};
                 double dis = sqrt(pow(x - riss[k].x(), 2) + pow(y - riss[k].y(), 2));
                 double angle_user = get_angle(u_ris, riss[k].vertical);
                 if(angle_user < (M_PI / 2.0) && dis <= 20){
                     served = true;
+                    // cout << "User " << i << " is served by RIS " << k << endl;
+                    // cout << "User location: (" << x << ", " << y << ")" << endl;
+                    // cout << "RIS location: (" << riss[k].x() << ", " << riss[k].y() << ")" << endl;
+                    // cout << "Angle: " << angle_user << endl;
+                    // cout << "Distance: " << dis << endl;
                     break;
                 }
             }
-            x = dist_int(gen);
-            y = dist_int(gen);
+            x = dist_int2(gen);
+            y = dist_int2(gen);
         }
         users[i].update(x, y);
 
@@ -240,7 +247,7 @@ int main(int argc, char *argv[]){
             double distance = users[i].dis_ris[k];
             data_i_k[i][k].fid_en = entangle_fidelity(distance, beta);
             data_i_k[i][k].prob_en = entangle_success_prob(distance);
-            cout << "fid_en: " << data_i_k[i][k].fid_en << " prob_en: " << data_i_k[i][k].prob_en << endl;
+            // cout << "fid_en: " << data_i_k[i][k].fid_en << " prob_en: " << data_i_k[i][k].prob_en << endl;
             
             // Initialize first value as entanglement fidelity
             data_i_k[i][k].fid_pur_times.push_back(data_i_k[i][k].fid_en);
@@ -290,5 +297,20 @@ int main(int argc, char *argv[]){
     }
 
     out.close();
+
+    // output location
+    string loc_file = "data/output/loc_" + dataset_file;
+    ofstream out_loc(loc_file);
+    if(!out_loc.is_open()){
+        cout << "Error: Cannot open file " << loc_file << endl;
+        exit(1);
+    }
+    for(int i=0; i<I; i++){
+        out_loc << "user " << users[i].x() << " " << users[i].y() << "\n";
+    }
+    out << "\n\n";
+    for(int k=0; k<K; k++){
+        out_loc << "ris " << riss[k].x() << " " << riss[k].y() << "\n";
+    }
     return 0;
 }
