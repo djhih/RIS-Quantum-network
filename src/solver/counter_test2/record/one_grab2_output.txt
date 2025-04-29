@@ -1,0 +1,186 @@
+BS max rate = 250.0
+total power 250
+x[1][3]: 0.0544986 R_bs for user 1 - RIS 3 : 2.7327
+x[1][5]: 0.945501 R_bs for user 1 - RIS 5 : 47.6729
+x[2][1]: 1 R_bs for user 2 - RIS 1 : 50.5246
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 0.945501 R_bs for user 7 - RIS 3 : 47.5715
+obj val: 470.986
+----------------------------------------
+BS max rate = 253.0
+total power 253
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.995319 R_bs for user 2 - RIS 1 : 50.2881
+x[2][2]: 0.00468079 R_bs for user 2 - RIS 2 : 0.237472
+x[3][1]: 0.00468079 R_bs for user 3 - RIS 1 : 0.241846
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 476.407
+----------------------------------------
+BS max rate = 256.0
+total power 256
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.93749 R_bs for user 2 - RIS 1 : 47.3663
+x[2][2]: 0.0625105 R_bs for user 2 - RIS 2 : 3.17136
+x[3][1]: 0.0625105 R_bs for user 3 - RIS 1 : 3.22978
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 481.438
+----------------------------------------
+BS max rate = 259.0
+total power 259
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.87966 R_bs for user 2 - RIS 1 : 44.4444
+x[2][2]: 0.12034 R_bs for user 2 - RIS 2 : 6.10525
+x[3][1]: 0.12034 R_bs for user 3 - RIS 1 : 6.21771
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 486.47
+----------------------------------------
+BS max rate = 262.0
+total power 262
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.82183 R_bs for user 2 - RIS 1 : 41.5226
+x[2][2]: 0.17817 R_bs for user 2 - RIS 2 : 9.03914
+x[3][1]: 0.17817 R_bs for user 3 - RIS 1 : 9.20564
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 491.501
+----------------------------------------
+BS max rate = 265.0
+total power 265
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.764 R_bs for user 2 - RIS 1 : 38.6008
+x[2][2]: 0.236 R_bs for user 2 - RIS 2 : 11.973
+x[3][1]: 0.236 R_bs for user 3 - RIS 1 : 12.1936
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 496.532
+----------------------------------------
+BS max rate = 268.0
+total power 268
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.706171 R_bs for user 2 - RIS 1 : 35.679
+x[2][2]: 0.293829 R_bs for user 2 - RIS 2 : 14.9069
+x[3][1]: 0.293829 R_bs for user 3 - RIS 1 : 15.1815
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 501.563
+----------------------------------------
+BS max rate = 271.0
+total power 271
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.648341 R_bs for user 2 - RIS 1 : 32.7572
+x[2][2]: 0.351659 R_bs for user 2 - RIS 2 : 17.8408
+x[3][1]: 0.351659 R_bs for user 3 - RIS 1 : 18.1694
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 506.594
+----------------------------------------
+BS max rate = 274.0
+total power 274
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.590511 R_bs for user 2 - RIS 1 : 29.8353
+x[2][2]: 0.409489 R_bs for user 2 - RIS 2 : 20.7747
+x[3][1]: 0.409489 R_bs for user 3 - RIS 1 : 21.1574
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 511.626
+----------------------------------------
+BS max rate = 277.0
+total power 277
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.532682 R_bs for user 2 - RIS 1 : 26.9135
+x[2][2]: 0.467318 R_bs for user 2 - RIS 2 : 23.7086
+x[3][1]: 0.467318 R_bs for user 3 - RIS 1 : 24.1453
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 516.657
+----------------------------------------
+BS max rate = 280.0
+total power 280
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.474852 R_bs for user 2 - RIS 1 : 23.9917
+x[2][2]: 0.525148 R_bs for user 2 - RIS 2 : 26.6425
+x[3][1]: 0.525148 R_bs for user 3 - RIS 1 : 27.1332
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 521.688
+----------------------------------------
+BS max rate = 283.0
+total power 283
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.417022 R_bs for user 2 - RIS 1 : 21.0699
+x[2][2]: 0.582978 R_bs for user 2 - RIS 2 : 29.5764
+x[3][1]: 0.582978 R_bs for user 3 - RIS 1 : 30.1212
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 526.719
+----------------------------------------
+BS max rate = 286.0
+total power 286
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.359193 R_bs for user 2 - RIS 1 : 18.1481
+x[2][2]: 0.640807 R_bs for user 2 - RIS 2 : 32.5102
+x[3][1]: 0.640807 R_bs for user 3 - RIS 1 : 33.1091
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 531.75
+----------------------------------------
+BS max rate = 289.0
+total power 289
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.301363 R_bs for user 2 - RIS 1 : 15.2262
+x[2][2]: 0.698637 R_bs for user 2 - RIS 2 : 35.4441
+x[3][1]: 0.698637 R_bs for user 3 - RIS 1 : 36.097
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 536.781
+----------------------------------------
+BS max rate = 292.0
+total power 292
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.243533 R_bs for user 2 - RIS 1 : 12.3044
+x[2][2]: 0.756467 R_bs for user 2 - RIS 2 : 38.378
+x[3][1]: 0.756467 R_bs for user 3 - RIS 1 : 39.085
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 541.813
+----------------------------------------
+BS max rate = 295.0
+total power 295
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.185704 R_bs for user 2 - RIS 1 : 9.38259
+x[2][2]: 0.814296 R_bs for user 2 - RIS 2 : 41.3119
+x[3][1]: 0.814296 R_bs for user 3 - RIS 1 : 42.0729
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 546.844
+----------------------------------------
+BS max rate = 298.0
+total power 298
+x[1][5]: 1 R_bs for user 1 - RIS 5 : 50.4208
+x[2][1]: 0.127874 R_bs for user 2 - RIS 1 : 6.46077
+x[2][2]: 0.872126 R_bs for user 2 - RIS 2 : 44.2458
+x[3][1]: 0.872126 R_bs for user 3 - RIS 1 : 45.0608
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 51.3596
+x[6][0]: 1 R_bs for user 6 - RIS 0 : 50.1386
+x[7][3]: 1 R_bs for user 7 - RIS 3 : 50.3136
+obj val: 551.875
+----------------------------------------

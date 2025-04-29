@@ -4,3 +4,81 @@ Gurobi 9.5.1 (linux64, C++) logging started Mon Apr 21 13:02:55 2025
 
 Gurobi 9.5.1 (linux64, C++) logging started Mon Apr 21 17:31:35 2025
 
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 10:53:08 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 10:54:23 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 10:57:09 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 11:00:39 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 11:01:38 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 11:02:21 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 11:02:50 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:00:37 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:00:53 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:01:59 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:02:35 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:03:05 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:04:37 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:25:26 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:25:42 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:25:51 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:26:04 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Wed Apr 23 16:26:12 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Thu Apr 24 12:35:17 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Thu Apr 24 12:35:48 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Thu Apr 24 12:36:16 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Thu Apr 24 12:37:02 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Thu Apr 24 12:37:58 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Thu Apr 24 13:27:21 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Thu Apr 24 13:27:59 2025
+
+
+Gurobi 9.5.1 (linux64, C++) logging started Thu Apr 24 15:25:52 2025
+

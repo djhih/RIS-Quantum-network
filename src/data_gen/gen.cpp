@@ -5,6 +5,8 @@
 #include<cmath>
 #include<limits>
 #include"../formula.h"
+#define ff first
+#define ss second
 using namespace std;
 
 /* This code is used to generate test cases, containing the following data:
@@ -34,13 +36,36 @@ output:
     6. prob_en[|I|][|K|]
     7. prob_pur[|I|][|K|]
     8. n[|I|][|K|]
+
+constraints:
+    1. dis(user, RIS) <= 20
+    2. uesr can be served by RIS while dis(user, RIS) <= 20 and angle(user-RIS, bs-RIS) <= 180
+    3. all user can be served by at least one RIS
+    4. all RIS can serve at least one user
+
+steps:
+    1. argv contains the number of users, RISs, BS power, fidelity threshold, avg load
+    2. generate random RIS locations and RIS theta
+    3. generate random user locations, and check if they can be served by at least one RIS
+    4. generate random user max rate, weight, and distance to RIS
+
+Default setting: 
+    1. RIS 10
+    2. User 100
+    3. Random User, RIS Location
+    4. User-RIS 20
+    5. weight 1-5 float
+
+Plot:
+    X Label: # Users, # RISs, dis(user, ris), BS power, Fidelity threshold, 平均負載(RIS 能服務的 user 數量)
+    Y Label : obj, # Users
 */
 
-int I = 10; // number of users
-int K = 5; // number of RISs
+int I = 100; // number of users
+int K = 10; // number of RISs
 const double beta = 0.00438471;
 double R_bs_max = 100; // max rate of BS
-const double fidelity_threshold = 0.85;
+double fidelity_threshold = 0.85;
 
 struct purify_table {
     double dis;
@@ -54,79 +79,171 @@ struct purify_table {
         : dis(dis), fid_en(fid_en), prob_en(prob_en), prob_pur(prob_pur), fid_pur_times(vector<double>()) {}
 };
 
-int main(){
+class Position {
+public:
+    Position() : loc(0.0, 0.0) {}
+    Position(double x, double y) : loc(x, y) {}
+
+    double x() const { return loc.first; }
+    double y() const { return loc.second; }
+    void update(double x, double y) {
+        loc.first = x;
+        loc.second = y;
+    }
+
+protected:
+    pair<double, double> loc;
+};
+
+class RIS : public Position {
+public:
+    RIS() : Position(), theta(0.0), dis_bs(0.0) {}
+    RIS(double x, double y, double t) : Position(x, y), theta(t), dis_bs(0.0) {}
+
+    double theta;
+    double dis_bs;
+    double angle_bs;
+    double angle_user;
+    vector<double> n_pairs;
+    vector<double> dis_user;
+    vector<int> served_user;
+    pair<double, double> horizontal;
+    pair<double, double> vertical;
+};
+
+class User : public Position {
+public:
+    User() : Position(), R_user_max(0.0), w(0.0) {}
+    User(double x, double y, double rate, double weight) : Position(x, y), R_user_max(rate), w(weight) {}
+
+    double R_user_max;
+    double w;
+    vector<double> n_pairs;
+    vector<double> dis_ris;
+};
+
+double dot(pair<double, double> a, pair<double, double> b){
+    return a.ff * b.ff + a.ss * b.ss;
+}
+
+double get_angle(pair<double, double> a, pair<double, double> b){
+    double angle = acos(dot(a, b) / (sqrt(a.ff * a.ff + a.ss * a.ss) * sqrt(b.ff * b.ff + b.ss * b.ss)));
+    return angle;
+}
+
+bool check_served(double angle_user, double angle_bs, double dis){
+    return (angle_user < (M_PI / 2.0) && angle_bs < (M_PI / 2.0) && dis <= 20);
+} 
+
+int main(int argc, char *argv[]){
+    if(argc != 6){
+        cout << "Usage: ./gen <I> <K> <R_bs_max> <fidelity_threshold> <avg_load>" << endl;
+        exit(1);
+    }
+    I = atoi(argv[1]);
+    K = atoi(argv[2]);
+    R_bs_max = atof(argv[3]);
+    fidelity_threshold = atof(argv[4]);
+    double avg_load = atof(argv[5]);
+
     ofstream out("data/raw/dataset.txt");
     if(!out.is_open()){
         cout << "Error: Cannot open file raw/dataset.txt" << endl;
         exit(1);
     }
+    
     random_device rd;
-    mt19937 gen(rd());
+    // default_random_engine gen(rd());
+    default_random_engine gen(0);   // fixed seed for reproducibility
     uniform_int_distribution<> dist_int(0, 99);
     uniform_real_distribution<> dist_real(0, 100);
 
-    vector<double> R_user_max(I);
-    vector<double> w(I);
-    vector<vector<double>> n_pairs(I, vector<double>(K));
-    vector<pair<double, double>> loc_user(I);
-    vector<pair<double, double>> loc_ris(I);
-    vector<double> dis_bs(K);
-    vector<vector<double>> dis(I, vector<double>(K));
-    vector<vector<double>> dis_tot(I, vector<double>(K));
+    vector<User> users(I);
+    vector<RIS> riss(K);
     vector<vector<purify_table>> data_i_k(I, vector<purify_table>(K));
 
+    // Generate BS location
+    Position bs(0, 0);
+
     out << I << " " << K << " " << R_bs_max << endl;
-    for(int i = 0; i < I; i++){
-        int x = dist_int(gen), y = dist_int(gen);
-        while(x == 0 && y == 0){
-            x = dist_int(gen);
-            y = dist_int(gen);
-        }
-        loc_user[i] = {x, y};
-    }
+    
+    // Generate RIS locations and angles
     for(int k = 0; k < K; k++){
         int x = dist_int(gen), y = dist_int(gen);
-        while(x == 0 && y == 0){
+        do {
+            uniform_real_distribution<> angle_dist(0, 2 * M_PI);
+            double theta = angle_dist(gen);
+
             x = dist_int(gen);
             y = dist_int(gen);
-        }
-        loc_ris[k] = {x, y};
-    }
+            riss[k] = RIS(x, y, theta);
+            
+            double xx = riss[k].y() * (1.0 / tan(riss[k].theta));
+            xx += x;
+            riss[k].horizontal = {xx - x, -y};
+            riss[k].vertical = {y, xx - x};
 
-    // generate random distances
-    // assume the BS is at (0, 0)
-    for(int k = 0; k < K; k++){
-        dis_bs[k] = sqrt(pow(loc_ris[k].first, 2) + pow(loc_ris[k].second, 2));
-    }
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            dis[i][k] = sqrt(pow(loc_user[i].first - loc_ris[k].first, 2) + pow(loc_user[i].second - loc_ris[k].second, 2));
-            dis_tot[i][k] = dis[i][k] + dis_bs[k];
-            data_i_k[i][k] = purify_table(dis[i][k], 1, 1, 1);
-        }
-    }
-
-    // generate random max rate for users
-    for(int i = 0; i < I; i++){
-        uniform_real_distribution<> weight_dist(1, 10);
-        w[i] = weight_dist(gen);
-        R_user_max[i] = dist_int(gen);
-        out << w[i] << ' ' << R_user_max[i] << "\n";
+            pair<double, double>bs_ris = {bs.x() - riss[k].x(), bs.y() - riss[k].y()};
+            riss[k].angle_bs = get_angle(bs_ris, riss[k].vertical);
+        } while(riss[k].angle_bs >= M_PI / 2.0 || (x == 0 && y == 0));
+        
+        // Calculate distance from RIS to BS
+        riss[k].dis_bs = sqrt(pow(riss[k].x(), 2) + pow(riss[k].y(), 2));
+        riss[k].dis_user.resize(I);
     }
     
-    // generate random probability for users and RISs
+    // Generate user locations
+    for(int i = 0; i < I; i++){
+        users[i].dis_ris.resize(K);
+        users[i].n_pairs.resize(K);
+        
+        int x = dist_int(gen), y = dist_int(gen);
+        bool served = false;
+        while(x == 0 && y == 0 && !served){
+            for(int k = 0; k < K; k++){
+                pair<double, double> u_ris = {x - riss[k].x(), y - riss[k].y()};
+                double dis = sqrt(pow(x - riss[k].x(), 2) + pow(y - riss[k].y(), 2));
+                double angle_user = get_angle(u_ris, riss[k].vertical);
+                if(angle_user < (M_PI / 2.0) && dis <= 20){
+                    served = true;
+                    break;
+                }
+            }
+            x = dist_int(gen);
+            y = dist_int(gen);
+        }
+        users[i].update(x, y);
+
+        for(int k = 0; k < K; k++){
+            double distance = sqrt(pow(users[i].x() - riss[k].x(), 2) + pow(users[i].y() - riss[k].y(), 2));
+            users[i].dis_ris[k] = distance;
+            riss[k].dis_user[i] = distance;
+            data_i_k[i][k] = purify_table(distance, 1, 1, 1);
+        }
+    }
+
+    // Generate random max rates and weights for users
+    for(int i = 0; i < I; i++){
+        uniform_real_distribution<> weight_dist(1, 10);
+        users[i].w = weight_dist(gen);
+        users[i].R_user_max = dist_int(gen);
+        out << users[i].w << ' ' << users[i].R_user_max << "\n";
+    }
+    
+    // Generate entanglement data
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){ 
-            data_i_k[i][k].fid_en = entangle_fidelity(dis[i][k], beta);
-            data_i_k[i][k].prob_en = entangle_success_prob(dis[i][k]);
+            double distance = users[i].dis_ris[k];
+            data_i_k[i][k].fid_en = entangle_fidelity(distance, beta);
+            data_i_k[i][k].prob_en = entangle_success_prob(distance);
             
-            // 初始化第一個值為純糾纏保真度
+            // Initialize first value as entanglement fidelity
             data_i_k[i][k].fid_pur_times.push_back(data_i_k[i][k].fid_en);
             
-            // 試著純化糾纏直到保真度超過閾值
-            for(int t=0; t<20; t++){
+            // Try purifying until fidelity exceeds threshold
+            for(int t = 0; t < 20; t++){
                 if(data_i_k[i][k].fid_pur_times.back() >= fidelity_threshold){
-                    n_pairs[i][k] = t;
+                    users[i].n_pairs[k] = t;
                     break;
                 }
                 double purify_fid = purify_fidelity(data_i_k[i][k].fid_pur_times.back(), data_i_k[i][k].fid_en);  
@@ -137,67 +254,36 @@ int main(){
         }
     }
 
-    // generate entanglement probability
+    // Output entanglement probability data
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
             if(data_i_k[i][k].fid_en > fidelity_threshold && data_i_k[i][k].prob_pur == 0){
                 data_i_k[i][k].prob_pur = 1;
             }
-            out << data_i_k[i][k].prob_en << " " << data_i_k[i][k].prob_pur << " " << n_pairs[i][k] << "\n";
+            out << data_i_k[i][k].prob_en << " " << data_i_k[i][k].prob_pur << " " << users[i].n_pairs[k] << "\n";
         }
     }
+
+    for(int k=0; k<K; k++){
+        for(int i=0; i<I; i++){
+            // get angle between user and RIS
+            pair<double, double> u_ris = {users[i].x() - riss[k].x(), users[i].y() - riss[k].y()};
+            double angle_user = get_angle(u_ris, riss[k].vertical);
+            if(check_served(angle_user, riss[k].angle_bs, users[i].dis_ris[k])){
+                riss[k].served_user.push_back(i);
+            }
+        }
+    }
+
+    // output user served by RIS
+    for(int k=0; k<K; k++){
+        out << riss[k].served_user.size() << " ";
+        for(int i=0; i<riss[k].served_user.size(); i++){
+            out << riss[k].served_user[i] << " ";
+        }
+        out << "\n";
+    }
+
     out.close();
-
-
-    cout << "Test case generated successfully!" << endl;
-    
-    cout << "I: " << I << endl;
-    cout << "K: " << K << endl;
-    cout << "R_bs_max: " << R_bs_max << endl;
-    cout << "R_user_max: ";
-    for(int i = 0; i < I; i++){
-        cout << R_user_max[i] << " ";
-    }
-    cout << endl;
-    cout << "w: ";
-    for(int i = 0; i < I; i++){
-        cout << w[i] << " ";
-    }
-    cout << endl;
-    cout << "dis: " << endl;
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            cout << dis[i][k] << " ";
-        }
-        cout << endl;
-    }
-    cout << "fid_en: " << endl;
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            cout << data_i_k[i][k].fid_en << " ";
-        }
-        cout << endl;
-    }
-    cout << "prob_en: " << endl;
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            cout << data_i_k[i][k].prob_en << " ";
-        }
-        cout << endl;
-    }
-    cout << "prob_pur: " << endl;
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            cout << data_i_k[i][k].prob_pur << " ";
-        }
-        cout << endl;
-    }
-    cout << "n_pairs: " << endl;
-    for(int i = 0; i < I; i++){
-        for(int k = 0; k < K; k++){
-            cout << n_pairs[i][k] << " ";
-        }
-        cout << endl;
-    }
     return 0;
 }

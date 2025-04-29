@@ -1,7 +1,6 @@
 #include<bits/stdc++.h>
 #include<random>
-#define ff first
-#define ss second
+
 using namespace std;
 
 /* This code is used to check if the user can be served by the RIS

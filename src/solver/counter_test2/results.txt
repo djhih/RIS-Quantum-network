@@ -1,0 +1,34 @@
+total power 5
+x[0][0]: 1 R_bs for user 0 - RIS 0 : 1
+x[1][1]: 1 R_bs for user 1 - RIS 1 : 2
+x[3][2]: 0.5 R_bs for user 3 - RIS 2 : 2
+obj val: 13
+----------------------------------------
+total power 6
+x[0][0]: 1 R_bs for user 0 - RIS 0 : 1
+x[1][1]: 1 R_bs for user 1 - RIS 1 : 2
+x[3][2]: 0.75 R_bs for user 3 - RIS 2 : 3
+obj val: 14
+----------------------------------------
+total power 7
+x[0][0]: 1 R_bs for user 0 - RIS 0 : 1
+x[1][1]: 1 R_bs for user 1 - RIS 1 : 2
+x[3][2]: 1 R_bs for user 3 - RIS 2 : 4
+obj val: 15
+----------------------------------------
+total power 8
+x[0][0]: 0.888889 R_bs for user 0 - RIS 0 : 0.888889
+x[1][0]: 0.111111 R_bs for user 1 - RIS 0 : 0.222222
+x[1][1]: 0.888889 R_bs for user 1 - RIS 1 : 1.77778
+x[2][1]: 0.111111 R_bs for user 2 - RIS 1 : 1.11111
+x[3][2]: 1 R_bs for user 3 - RIS 2 : 4
+obj val: 15.1111
+----------------------------------------
+total power 9
+x[0][0]: 0.777778 R_bs for user 0 - RIS 0 : 0.777778
+x[1][0]: 0.222222 R_bs for user 1 - RIS 0 : 0.444444
+x[1][1]: 0.777778 R_bs for user 1 - RIS 1 : 1.55556
+x[2][1]: 0.222222 R_bs for user 2 - RIS 1 : 2.22222
+x[3][2]: 1 R_bs for user 3 - RIS 2 : 4
+obj val: 15.2222
+----------------------------------------

@@ -10,6 +10,7 @@ vector<double> R_user_max, w;
 vector<vector<double>> prob_en, prob_pur, n_pairs; // s_ik
 vector<pair<int, int>>accept_assign; // ris_assign[i] = k, user_assign[k] = i
 double cur_power_used = 0; // current power used by BS
+vector<vector<int>> ris_served_user; // ris_served_user[k] = i, user_served[i] = k
 
 /* --- greedy --- */
 // greedy using w[i]
@@ -97,7 +98,14 @@ void input_dataset(string dataset_file = "data/raw/dataset.txt"){
             }
         }
     }
-
+    for(int k = 0; k < K; k++){
+        int num_served;
+        in >> num_served;
+        ris_served_user.push_back(vector<int>(num_served));
+        for(int i = 0; i < num_served; i++){
+            in >> ris_served_user[k][i];
+        }
+    }
     in.close();
 }
 

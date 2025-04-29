@@ -17,11 +17,11 @@ double s[100][100];
 
 void input(){
 //    ifstream in("src/solver/counter_test/solver_data.txt");
-	ifstream in("solver_data.txt");
+	ifstream in("data_tmp.txt");
     	assert(in.is_open());
     in >> K >> I; //
     in >> R_bs_max;
-    for(int i=0; i<I; i++) in >> w[i];
+    // for(int i=0; i<I; i++) in >> w[i];
     for(int i=0; i<I; i++) in >> V[i];
     for(int i=0; i<I; i++) for(int k=0; k<K; k++) in >> s[i][k];
     in >> R_bs_max;
@@ -32,7 +32,7 @@ double solveRelaxedProblem() {
     try {
         GRBEnv env = GRBEnv(true);
         env.set(GRB_IntParam_OutputFlag, 0); 
-        env.set(GRB_StringParam_LogFile, "gurobi_log.txt");
+        // env.set(GRB_StringParam_LogFile, "gurobi_log.txt");
         env.start();
         GRBModel model = GRBModel(env);
         

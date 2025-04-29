@@ -1,0 +1,30 @@
+total power 307
+x[1][8]: 1 R_bs for user 1 - RIS 8 : 51.5777
+x[2][4]: 1 R_bs for user 2 - RIS 4 : 54.0515
+x[3][12]: 1 R_bs for user 3 - RIS 12 : 50.6759
+x[4][10]: 0.991192 R_bs for user 4 - RIS 10 : 50.1027
+x[5][3]: 1 R_bs for user 5 - RIS 3 : 50.2524
+x[6][6]: 1 R_bs for user 6 - RIS 6 : 50.3399
+obj val: 542.269
+------------
+total power 308
+x[0][12]: 0.0106952 R_bs for user 0 - RIS 12 : 0.551974
+x[1][8]: 1 R_bs for user 1 - RIS 8 : 51.5777
+x[2][4]: 1 R_bs for user 2 - RIS 4 : 54.0515
+x[3][1]: 0.0106952 R_bs for user 3 - RIS 1 : 0.54477
+x[3][12]: 0.989305 R_bs for user 3 - RIS 12 : 50.1339
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 50.548
+x[5][3]: 1 R_bs for user 5 - RIS 3 : 50.2524
+x[6][6]: 1 R_bs for user 6 - RIS 6 : 50.3399
+obj val: 543.866
+-------------
+total power 338
+x[0][12]: 0.589072 R_bs for user 0 - RIS 12 : 30.4016
+x[1][8]: 1 R_bs for user 1 - RIS 8 : 51.5777
+x[2][4]: 1 R_bs for user 2 - RIS 4 : 54.0515
+x[3][1]: 0.589072 R_bs for user 3 - RIS 1 : 30.0049
+x[3][12]: 0.410928 R_bs for user 3 - RIS 12 : 20.8241
+x[4][10]: 1 R_bs for user 4 - RIS 10 : 50.548
+x[5][3]: 1 R_bs for user 5 - RIS 3 : 50.2524
+x[6][6]: 1 R_bs for user 6 - RIS 6 : 50.3399
+obj val: 590.715

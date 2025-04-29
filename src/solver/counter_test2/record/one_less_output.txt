@@ -1,0 +1,13 @@
+total power 150
+x[1][7]: 1 R_bs for user 1 - RIS 7 : 54.1775
+x[4][3]: 0.820302 R_bs for user 4 - RIS 3 : 41.3084
+x[5][3]: 0.179698 R_bs for user 5 - RIS 3 : 9.55841
+x[5][10]: 0.820302 R_bs for user 5 - RIS 10 : 44.9557
+obj val: 272.288
+------------------------
+total power 206
+x[1][7]: 1 R_bs for user 1 - RIS 7 : 54.1775
+x[4][3]: 1 R_bs for user 4 - RIS 3 : 50.3576
+x[5][10]: 1 R_bs for user 5 - RIS 10 : 54.8038
+x[6][5]: 0.926766 R_bs for user 6 - RIS 5 : 46.6611
+obj val: 372.409
