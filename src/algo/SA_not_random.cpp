@@ -25,7 +25,7 @@ map<pair<int, int>, int> can_serve;
 
 
 string infile = "data/raw/dataset.txt";
-string outfile = "data/res/res_greedy_cp.txt";
+string outfile = "data/res/res_SA_not_random.txt";
 
 // L: # of iterations
 // I: # of users
@@ -423,7 +423,7 @@ void SA()
 void output_accept(){
     ofstream out(outfile);
     if(!out.is_open()){
-        cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
+        cout << "Error: Cannot open file data/output/res_SA_not_random.txt" << endl;
         exit(1);
     }
     out << "Accepted assignment: " << endl;
