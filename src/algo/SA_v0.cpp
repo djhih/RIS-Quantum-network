@@ -231,7 +231,7 @@ void rate_distribution(Solution& sol, int k, Solution& old_sol, int initial)
             uniform_int_distribution<> dis(0, min(sol.Rin_left*prob_en[i][k], R_user_max[i]));
             sol.Rin[i] = dis(gen);
         }
-        sol.Rin_left -= old_sol.Rin[i]/prob_en[i][k];
+        sol.Rin_left -= sol.Rin[i]/prob_en[i][k];
         // cout << "user" << i << ": " << sol.Rin[i] << "  ";
     }
     // cout << "R_bs_rate left: "<< sol.Rin_left << "\n\n";
