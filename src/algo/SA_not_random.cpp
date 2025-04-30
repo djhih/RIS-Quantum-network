@@ -195,48 +195,61 @@ void checkpoint(Solution& sol, int k)
 
 void rate_distribution(Solution& sol, int k, Solution& old_sol, int fix_label)
 {
-    // cout << "\n\nRIS_" << k << ":" << endl;
+    //cout << "\n\nRIS_" << k << ":" << endl;
     // cout << "\nrandom_rate_distribute!\n";
 
     // cout << sol.Rin_left << " rate left\n" << sol.user_left.size() << " users left\n";
 
     // fix --> whether we modify it
+    //cout << "rate distribution\n";
+    //cout << "R_bs_rate left: "<< sol.Rin_left << "\n\n";
     int fix;
     if(fix_label != -1 && fix_label < K/4) //(fix_label == 0) // K/2
         fix = 1;
     else
         fix = 0;
 
+    // cout << "fix:" << fix << "\n";
+
     for(int j=0; j<sol.user_left.size(); j++)
     {
         int i = sol.user_left[j];
 
-        int can_serve = 0;  // check whether RIS k can serve user i
-        for(int user : ris_served_user[k])
+        //int can_serve = 0;  // check whether RIS k can serve user i
+        /*for(int user : ris_served_user[k])
         {
             if (user == i)
             {
+                cout << k << " can serve " << i << "\n";
                 can_serve = 1;
                 break;
             }
-        }
+        }*/
 
-        if(fix == 1)
+        if(fix == 1 && sol.Rin_left != 0 && n_pairs[i][k] == 1 && can_serve[{k,i}] == 1 && sol.Rin_left*prob_en[i][k] >= R_user_max[i])
         {
             sol.Rin[i] = old_sol.Rin[i];
+            if(old_sol.Rin[i]!=0)
+            {
+                //cout << "user_" << i << " | n:" << n_pairs[i][k] << " prob_en:" << prob_en[i][k] << " power left:" << sol.Rin_left*prob_en[i][k] <<
+                //" max_rate:" << R_user_max[i] << " RIS_" << k << " can_serve?:" << can_serve[{k,i}] << "\n";
+            }
+
         }
-        else if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || can_serve == 0 || sol.Rin_left*prob_en[i][k] < R_user_max[i] )
+        else if( sol.Rin_left == 0 || n_pairs[i][k] > 1 || can_serve[{k,i}] == 0 || sol.Rin_left*prob_en[i][k] < R_user_max[i] )
         {
             sol.Rin[i] = 0;
         }
         else
         {
             sol.Rin[i] = R_user_max[i];
+            //cout << "user_" << i << " | n:" << n_pairs[i][k] << " prob_en:" << prob_en[i][k] << " power left:" << sol.Rin_left*prob_en[i][k] <<
+            //" max_rate:" << R_user_max[i] << " RIS_" << k << " can_serve?:" << can_serve[{k,i}] << "\n";
         }
         sol.Rin_left -= sol.Rin[i]/prob_en[i][k];
         // cout << "user" << i << ": " << sol.Rin[i] << "  ";
     }
-    // cout << "R_bs_rate left: "<< sol.Rin_left << "\n\n";
+    //cout << "R_bs_rate left: "<< sol.Rin_left << "\n\n";
 }
 
 void random_pick_ris(int table[])
