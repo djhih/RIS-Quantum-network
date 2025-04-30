@@ -99,7 +99,7 @@ plt_graph_settings: dict = {
 # 讀取檔案並解析資料的類別
 # -------------------------------
 class AlgorithmData:
-    def __init__(self, algorithm: str, file_list: List[str], x_label: str, y_label: str, predefined_x: Optional[List[float]] = None):
+    def __init__(self, algorithm: str,  x_label: str, y_label: str, predefined_x: Optional[List[float]] = None):
         """
         @param algorithm: 算法名稱（如 "greedy"、"heuristic"、"mis"、"imp"）
         @param file_list: 此算法對應的檔案列表
@@ -108,7 +108,7 @@ class AlgorithmData:
         @param predefined_x: 預先定義的 x 軸值（若提供則使用這些值而非從檔名中提取）
         """
         self.algorithm = algorithm
-        self.file_list = file_list
+        # self.file_list = file_list
         self.avg_file = f"data/res/avg/{algorithm}_avg.txt"
         self.x_label = x_label
         self.y_label = y_label
@@ -198,24 +198,31 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     
     # 根據檔名規則建立各算法的檔案列表
     filepath = os.path.join("data", "res")
-    dataset_ids = [100, 200, 300, 400, 500]
-    cp_files = [os.path.join(filepath, f"greedy_cp_{i}_1.txt") for i in range(1, 6)]
-    w_files = [os.path.join(filepath, f"greedy_w_{i}_1.txt") for i in range(1, 6)]
-    obj_files = [os.path.join(filepath, f"greedy_obj_{i}_1.txt") for i in range(1, 6)]
-    a0_files = [os.path.join(filepath, f"a0_{i}_1.txt") for i in range(1, 6)]
-    sa_files = [os.path.join(filepath, f"SA_not_random_{i}_1.txt") for i in range(1, 6)]
-    ilp_files = [os.path.join(filepath, f"ILP_{i}_1.txt") for i in range(1, 6)]
+    dataset_ids = [100, 200, 300, 400, 500] 
+    # cp_files = [os.path.join(filepath, f"greedy_cp_{i}_1.txt") for i in range(1, 6)]
+    # w_files = [os.path.join(filepath, f"greedy_w_{i}_1.txt") for i in range(1, 6)]
+    # obj_files = [os.path.join(filepath, f"greedy_obj_{i}_1.txt") for i in range(1, 6)]
+    # a0_files = [os.path.join(filepath, f"a0_{i}_1.txt") for i in range(1, 6)]
+    # sa_files = [os.path.join(filepath, f"SA_not_random_{i}_1.txt") for i in range(1, 6)]
+    # ilp_files = [os.path.join(filepath, f"ILP_{i}_1.txt") for i in range(1, 6)]
 
     x_label = "# UEs |I|"
     y_label = "Objective"
 
     # 建立各算法的資料物件
-    data_cp = AlgorithmData("greedy_cp", cp_files, x_label=x_label, y_label=y_label)
-    data_w = AlgorithmData("greedy_w", w_files, x_label=x_label, y_label=y_label)
-    data_obj = AlgorithmData("greedy_obj", obj_files, x_label=x_label, y_label=y_label)
-    data_a0 = AlgorithmData("a0", a0_files, x_label=x_label, y_label=y_label)
-    data_sa = AlgorithmData("SA_not_random", sa_files, x_label=x_label, y_label=y_label)
-    data_ilp = AlgorithmData("ILP", ilp_files, x_label=x_label, y_label=y_label)
+    data_cp = AlgorithmData("greedy_cp", x_label=x_label, y_label=y_label)
+    data_w = AlgorithmData("greedy_w", x_label=x_label, y_label=y_label)
+    data_obj = AlgorithmData("greedy_obj", x_label=x_label, y_label=y_label)
+    data_a0 = AlgorithmData("a0", x_label=x_label, y_label=y_label)
+    data_sa = AlgorithmData("SA_not_random", x_label=x_label, y_label=y_label)
+    data_ilp = AlgorithmData("ILP", x_label=x_label, y_label=y_label)
+
+    print("data_cp.y:", data_cp.y)
+    print("data_w.y:", data_w.y)
+    print("data_obj.y:", data_obj.y)
+    print("data_a0.y:", data_a0.y)
+    print("data_sa.y:", data_sa.y)
+    print("data_ilp.y:", data_ilp.y)
 
     # 設定 x 軸的值
     data_cp.set_x(dataset_ids)
@@ -228,17 +235,6 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     # 建立圖表並應用完整設定
     plt.rcParams.update(plt_graph_settings["andy_theme"])
     fig, ax = plt.subplots(**plt_graph_settings["subplots_setting"])
-
-    # 為避免因檔名排序不一致，先依 x 軸（執行編號）排序
-    def sort_data(data_obj: AlgorithmData):
-        if len(data_obj.x) == 0:
-            return
-        indices = np.argsort(data_obj.x)
-        data_obj.x = np.array(data_obj.x)[indices]
-        data_obj.y = np.array(data_obj.y)[indices]
-
-    for data_obj in [data_cp, data_w, data_obj, data_a0]:
-        sort_data(data_obj)
 
     # "h", "o", "^", "d"
     cp_settings = plt_graph_settings["ax1_settings"].copy()
@@ -253,7 +249,7 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     w_settings.update({"marker": "o", "markersize": 10, "markeredgewidth": 2.5, "markerfacecolor": "none" })
     if len(data_w.x) > 0 and len(data_w.y) > 0:
         ax.plot(data_w.x, data_w.y,
-                label="HVF",
+                label="HWF",
                 color=line_colors[1],
                 **w_settings)
 
@@ -261,7 +257,7 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     obj_settings.update({"marker": "d", "markersize": 12, "markeredgewidth": 2.5,"markerfacecolor": "none"})
     if len(data_obj.x) > 0 and len(data_obj.y) > 0:
         ax.plot(data_obj.x, data_obj.y,
-                label="HWF",
+                label="HVF",
                 color=line_colors[2],
                 **obj_settings)
 
@@ -301,7 +297,7 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     plt.setp(ax.get_yticklabels(), **plt_graph_settings["plt_yticks_settings"])
     
     # 設定 x 軸的刻度
-    xticks = [100, 200, 300, 400, 500]
+    xticks = dataset_ids
     ax.set_xticks(xticks)
     
     # 設定 x 軸的範圍正好是第一個刻度到最後一個刻度
@@ -319,7 +315,7 @@ def plot_comparative_graph(dataset_ids=None, persat=None): # type: ignore
     plt.subplots_adjust(**plt_graph_settings["subplots_adjust_settings"])
     plt.tight_layout()
 
-    filename = f"GS_GenRate{'_perns_' + str(persat) + '_nq_' + str(req) if persat and req else ''}.png"
+    filename = f"TMP.png"
     output_file = os.path.join(OUTPUT_FOLDER, filename)
     plt.savefig(output_file)
     plt.close()
