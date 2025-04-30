@@ -6,8 +6,9 @@ int main(){
     string algo_path = "src/algo/";
     string res_path = "data/res/";
     string name_algo[6] = {"a0", "greedy_w", "greedy_cp", "greedy_obj", "SA_not_random", "ILP"};
-    double avg_obj[10][20];
-    memset(avg_obj, 0, sizeof(avg_obj));
+    double data[10][20][20];
+    memset(data, 0, sizeof(data));
+
     // i0: algo, i1: dataset, i2: subdataset
     for(int i0=0; i0<6; i0++){
         for(int i=1; i<=5; i++){
@@ -21,6 +22,7 @@ int main(){
                     tot--;
                     continue;
                 }
+
                 string line;
                 double obj = 0;
                 while(getline(in, line)){
@@ -28,19 +30,40 @@ int main(){
                         istringstream iss(line);
                         string tmp;
                         iss >> tmp >> tmp >> obj;
-                        avg_obj[i0][i] += obj;
-                        if(avg_obj[i0][i] == 0){
-                            tot--;
-                            break;
-                        }
+                        data[i0][i][j] = obj;
                     }
                 }
                 cout << "open file: " << filename << " obj " << obj << endl;
                 in.close();
             }
-            avg_obj[i0][i] /= tot;
         }
     }
+
+    vector<vector<double>> avg_obj(6, vector<double>(6, 0));
+    // count avg
+    for(int i=1; i<6; i++){
+        vector<bool>ok(11, false);
+        for(int j=1; j<11; j++){
+            for(int k=0; k<6; k++){
+                if(data[k][i][j] != 0){
+                    ok[j] = true;
+                }
+            }
+        }
+        double cnt = 0;
+        for(int j=1; j<11; j++){
+            if(ok[j]){
+                cnt++;
+                for(int k=0; k<6; k++){
+                    avg_obj[k][i] += data[k][i][j];
+                }
+            }
+        }
+        for(int k=0; k<6; k++){
+            avg_obj[k][i] /= cnt;
+        }
+    }
+    
 
     for(int i=0; i<6; i++){
         cout << "Algorithm: " << name_algo[i] << endl;
