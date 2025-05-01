@@ -16,13 +16,14 @@ int main(){
     for(int g=0; g<number_graph; g++){
         for(int i0=0; i0<number_algo; i0++){
             for(int i=1; i<=test_case; i++){
-                int tot = 10;
+                int tot = sub_test_case;
                 for(int j=1; j<=sub_test_case; j++){
                     ifstream in;
                     string filename = res_path + name_algo[i0] + "_" + to_string(i) + "_" + to_string(j) + ".txt";
                     in.open(filename);
                     if(!in.is_open()){
                         cout << "Error: Cannot open file " << filename << endl;
+                        data[g][i0][i][j] = -1;
                         tot--;
                         continue;
                     }
@@ -50,29 +51,51 @@ int main(){
     }
     
 
-    vector<vector<vector<double>>> avg_obj(6, vector<vector<double>>(6, vector<double>(11, 0)));
+    vector<vector<vector<double>>> avg_obj(20, vector<vector<double>>(20, vector<double>(30, 0)));
     // count avg
     for(int g=0; g<number_graph; g++){
         for(int i=1; i<=test_case; i++){
-            vector<bool>ok(sub_test_case, false);
+            // 記錄哪些子測試案例至少有一個演算法有有效資料
+            vector<bool> valid_test(sub_test_case+1, false);
+            
+            // 檢查每個子測試案例是否有任何一個演算法有無效資料
             for(int j=1; j<=sub_test_case; j++){
+                bool any_valid = true;
                 for(int k=0; k<number_algo; k++){
-                    if(data[g][k][i][j] != 0){
-                        ok[j] = true;
+                    if(data[g][k][i][j] <= 0){
+                        any_valid = false;
+                        break;
                     }
                 }
+                valid_test[j] = any_valid;
+                if(g == 0 && !any_valid){
+                    cout << "not ok on " << g << " " << i << " " << j << endl;
+                }
             }
-            double cnt = 0;
+            
+            // 計算有效的子測試案例數量
+            int valid_count = 0;
             for(int j=1; j<=sub_test_case; j++){
-                if(ok[j]){
-                    cnt++;
+                if(valid_test[j]){
+                    valid_count++;
+                    // 累加有效資料到平均值
                     for(int k=0; k<number_algo; k++){
                         avg_obj[g][k][i] += data[g][k][i][j];
                     }
                 }
             }
-            for(int k=0; k<number_algo; k++){
-                avg_obj[g][k][i] /= cnt;
+            
+            // 計算平均值，避免除以零
+            if(valid_count > 0){
+                for(int k=0; k<number_algo; k++){
+                    if(g == 0)
+                        cout << "Algorithm: " << name_algo[k] << " i " << i << " cnt " << valid_count << endl;
+                    avg_obj[g][k][i] /= valid_count;
+                }
+            } else {
+                // 如果所有子測試案例都無效，輸出警告
+                if(g == 0)
+                    cout << "Warning: No valid data for test case " << i << endl;
             }
         }
     }
