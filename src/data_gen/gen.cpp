@@ -136,7 +136,7 @@ double get_angle(pair<double, double> a, pair<double, double> b){
 }
 
 bool check_served(double angle_user, double angle_bs, double dis){
-    return (angle_user < (M_PI / 2.0) && angle_bs < (M_PI / 2.0) && dis <= 20);
+    return (angle_user < (M_PI / 2.0) && angle_bs < (M_PI / 2.0) && dis);
 } 
 
 double generate_price_ratio(std::default_random_engine& rng) {
@@ -149,7 +149,8 @@ double generate_price_ratio(std::default_random_engine& rng) {
 }
 
 int required_purification_rounds(double F0, double F_th) {
-    if (F0 <= 0.0 || F0 >= 1.0 || F_th <= 0.0 || F_th >= 1.0) {
+    if (F0 <= 0.0 || F0 > 1.0 || F_th <= 0.0 || F_th > 1.0) {
+        cout << "F0 " << F0 << " F_th " << F_th << '\n';
         throw std::invalid_argument("F0 and F_th must be in the open interval (0, 1).");
     }
 
@@ -193,7 +194,7 @@ int main(int argc, char *argv[]){
     default_random_engine gen(seed);   // fixed seed for reproducibility
     uniform_int_distribution<> dist_int(0, 100);
     uniform_real_distribution<> dist_real(0, 100);
-    uniform_int_distribution<> dist_int2(0, 600);
+    uniform_int_distribution<> dist_int2(0, 500);
 
     vector<User> users(I);
     vector<RIS> riss(K);
@@ -233,6 +234,11 @@ int main(int argc, char *argv[]){
         ris_set.insert({x, y});
     }
     
+    // print all ris
+    // for(int k = 0; k < K; k++){
+    //     cout << riss[k].x() << " " << riss[k].y() << " " << riss[k].theta << endl;
+    // }
+
     // Generate user locations
     for(int i = 0; i < I; i++){
         users[i].dis_ris.resize(K);
@@ -241,7 +247,16 @@ int main(int argc, char *argv[]){
         int x = dist_int2(gen), y = dist_int2(gen);
         bool served = false;
 
-        while((x == 0 && y == 0) || !served || user_set.count({x, y}) > 0){
+        // cerr << "User " << i << ": ";
+
+        while((x == 0 && y == 0) || !served || user_set.count({x, y}) > 0 || ris_set.count({x, y}) > 0){
+            x = dist_int2(gen);
+            y = dist_int2(gen);
+            
+            if((x == 0 && y == 0) || user_set.count({x, y}) > 0 || ris_set.count({x, y}) > 0){
+                continue;
+            }
+
             for(int k = 0; k < K; k++){
                 pair<double, double> u_ris = {x - riss[k].x(), y - riss[k].y()};
                 double dis_user_risk = sqrt(pow(x - riss[k].x(), 2) + pow(y - riss[k].y(), 2));
@@ -257,10 +272,13 @@ int main(int argc, char *argv[]){
                 }
             }
             if(served) break;
-            x = dist_int2(gen);
-            y = dist_int2(gen);
         }
-        users[i].update(x, y);
+
+        users[i].update(x, y);        
+        if(users[i].x() == 0 && users[i].y() == 0){
+            cout << "Error: user " << i << " location is (0, 0)" << endl;
+            exit(1);
+        }
         user_set.insert({x, y});
 
         for(int k = 0; k < K; k++){
@@ -305,8 +323,16 @@ int main(int argc, char *argv[]){
         double user_bs_purification_times = required_purification_rounds(user_en_fid, fidelity_threshold);
 
         // mean 2.0, standard deviation 0.5
-        uniform_int_distribution<> user_max_dist(1e4, 2e4);
-        users[i].w = generate_price_ratio(gen) * user_bs_purification_times;
+        uniform_int_distribution<> user_max_dist(1e5, 2e5);
+        users[i].w = generate_price_ratio(gen) * (user_bs_purification_times + 1);
+        if(users[i].w == 0){
+            cout << "Error: user " << i << " weight is 0" << endl;
+            cout << "user_bs_dis: " << user_bs_dis << " user_en_fid: " << user_en_fid << endl;
+            cout << "user_loc: " << users[i].x() << " " << users[i].y() << endl;
+            cout << "user_bs_purification_times: " << user_bs_purification_times << endl;
+            cout << "user_max_dist: " << users[i].w << endl;
+            exit(1);
+        }
         users[i].R_user_max = user_max_dist(gen);
         out << users[i].w << ' ' << users[i].R_user_max << "\n";
     }
