@@ -92,6 +92,15 @@ public:
 };
 
 int main(){
+    // remove old res
+    string rm_cmd = "rm -rf data/res";
+    string mkdir_cmd = "mkdir -p data/res";
+    string mkdir_avg_cmd = "mkdir -p data/res/avg";
+    system(rm_cmd.c_str());
+    system(mkdir_cmd.c_str());
+    system(mkdir_avg_cmd.c_str());
+    cout << "Removed old res and created new res directory" << endl;
+
     // start time
     auto start = chrono::high_resolution_clock::now();
     string dataset_file = "dataset.txt";
@@ -115,16 +124,17 @@ int main(){
     string genexe = "src/data_gen/bin/gen.exe";
     data_generator gen(genfile, genexe, dataset_file);
 
-    int I = 100, K = 50, R_bs_max = 500;
+    int I = 100, K = 10, R_bs_max = 2e5;
     double fidelity_threshold = 0.85, avg_load = 1;
     int seed = 0;
 
     // Run algorithms
     for(int i=1; i<=5; i++){
         // Modify parameter for dataset
-        I = i * 100;
-        for(int j=1; j<=10; j++){
-            seed = j-1;
+        I = i * 50 + 50;
+        for(int j=1; j<=5; j++){
+            seed = 0 + j;
+            // seed = j-1;
             string cur_dataset = gen_data_path + "dataset_" + to_string(i) + "_" + to_string(j) + ".txt";
             gen.dataset_file = cur_dataset;
             

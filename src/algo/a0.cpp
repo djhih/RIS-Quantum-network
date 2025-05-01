@@ -35,6 +35,46 @@ vector<vector<int>> ris_served_user; // ris_served_user[k] = i, user_served[i] =
 string infile = "data/raw/dataset.txt";
 string outfile = "data/res/res_greedy_w.txt";
 
+/* --- greedy cp value --- */
+void greedy_cp(double cur_power_used){
+    // return;
+    vector<bool> user_assigned(I, false);
+    vector<bool> ris_assigned(K, false);
+
+    for(auto assign: accept_assign){
+        auto [i, k] = assign;
+        user_assigned[i] = true;
+        ris_assigned[k] = true;
+    }
+
+    priority_queue<pair<double, pair<int, int>>> pq; // {w[i], {i, k}}
+    for(int i = 0; i < I; i++){
+        for(int k = 0; k < K; k++){
+            if(!user_assigned[i] && !ris_assigned[k]){
+                double cp_value = w[i] * (prob_en[i][k] * prob_pur[i][k]) / n_pairs[i][k]; //! not sure cp
+                pq.push({cp_value, {i, k}});
+            }
+        }
+    }
+
+    while(!pq.empty()){
+        auto [cp_i, pair_ik] = pq.top();
+        pq.pop();
+        auto [i, k] = pair_ik;
+        // check if we can assign user i to RIS k
+        if(cur_power_used + R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]) > R_bs_max){
+            continue;
+        }
+        if(!user_assigned[i] && !ris_assigned[k]){
+            user_assigned[i] = true;
+            ris_assigned[k] = true;
+            accept_assign.push_back({i, k});
+            cur_power_used += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+            cout << "greedy add " << i << " " << k << endl;
+        }
+    }
+}
+
 /* --- process data from solver and do mathcing --- */
 void data_process(){
     map<pair<int, int>, double> rem_pair_x;
@@ -45,7 +85,7 @@ void data_process(){
             if(x[i][k] == 1){
                 accept_assign.push_back({i, k});
                 user_cnt_ris[i] ++;
-            } else if(x[i][k] > 0 && x[i][k] < 1){
+            } else if(x[i][k] > 0 && x[i][k] < 1 && can_serve.count({k, i}) > 0){
                 rem_pair_x[{i, k}] = x[i][k];
             }
         }
@@ -105,22 +145,25 @@ void data_process(){
                     cout << "Overload: Cannot move power from k1 to k2." << endl;
                     exit(1);
                 }
-                cout << "accept size " << accept_assign.size() << endl;
                 accept_assign.push_back({i2, k2});
                 compare_pair = {i1, k1};
-                cout << "push back " << i2 << " " << k2 << endl;
-                cout << "accept size " << accept_assign.size() << endl;
+                current_useage += R_user_max[i2] * n_pairs[i2][k2] / (prob_en[i2][k2] * prob_pur[i2][k2]);
+
+                //! try to add more ans from all user
+                greedy_cp(current_useage);
+
             } else {
                 // move power from k2 to k1
                 if(power1 + current_useage > R_bs_max){
                     cout << "Error: Cannot move power from k2 to k1." << endl;
                     exit(1);
                 }
-                cout << "accept size " << accept_assign.size() << endl;
                 accept_assign.push_back({i1, k1});
                 compare_pair = {i2, k2};
-                cout << "push back " << i1 << " " << k1 << endl;
-                cout << "accept size " << accept_assign.size() << endl;
+                current_useage += R_user_max[i1] * n_pairs[i1][k1] / (prob_en[i1][k1] * prob_pur[i1][k1]);
+
+                //! try to add more ans from all user
+                greedy_cp(current_useage);
             }
         } else {
             // try move power from one to another
@@ -140,6 +183,10 @@ void data_process(){
                 }
                 accept_assign.push_back({i2, k2});
                 compare_pair = {i1, k1};
+                current_useage += R_user_max[i2] * n_pairs[i2][k2] / (prob_en[i2][k2] * prob_pur[i2][k2]);
+                //! try to add more ans from all user
+                greedy_cp(current_useage);
+
             } else {
                 // move power from k2 to k1
                 if(power1 + current_useage > R_bs_max){
@@ -148,6 +195,11 @@ void data_process(){
                 }
                 accept_assign.push_back({i1, k1});
                 compare_pair = {i2, k2};
+                current_useage += R_user_max[i1] * n_pairs[i1][k1] / (prob_en[i1][k1] * prob_pur[i1][k1]);
+
+                //! try to add more ans from all user
+                greedy_cp(current_useage);
+
             }
         }
     }
@@ -171,9 +223,9 @@ void compare(){
         cur_obj += w[i] * R_user_max[i];
     }
 
-    double compare_obj = 0;
+    double cmp_obj = 0;
     auto [i, k] = compare_pair;
-    compare_obj += w[i] * R_user_max[i];
+    cmp_obj += w[i] * R_user_max[i];
     
     double cmp_useage = 0;
     cmp_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
@@ -184,37 +236,83 @@ void compare(){
     vector<pair<int, int>> cmp_pairs;
     cmp_pairs.push_back(compare_pair);
 
-    // sort cmp_usage by cp_value = w[i] * (prob_en[i][k] * prob_pur[i][k]) / n_pairs[i][k];
-    sort(accept_assign.begin(), accept_assign.end(), [](pair<int, int> a, pair<int, int> b){
-        auto [i1, k1] = a;
-        auto [i2, k2] = b;
-        return (w[i1] * (prob_en[i1][k1] * prob_pur[i1][k1]) / n_pairs[i1][k1]) > (w[i2] * (prob_en[i2][k2] * prob_pur[i2][k2]) / n_pairs[i2][k2]);
-    });
+    // ! sort all unserved users by cp_value = w[i] * (prob_en[i][k] * prob_pur[i][k]) / n_pairs[i][k];
 
-    // try to add more ans from accept_assign
-    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
-        auto [i, k] = *it;
-        // count usage if we add this pair
-        cmp_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
-        if(cmp_useage > R_bs_max){
-            cmp_useage -= R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
-            continue;
-        } else {
-            cmp_pairs.push_back({i, k});
-            compare_obj += w[i] * R_user_max[i];
+    vector<bool> user_assigned(I, false);
+    vector<bool> ris_assigned(K, false);
+
+    for(auto assign: cmp_pairs){
+        auto [i, k] = assign;
+        user_assigned[i] = true;
+        ris_assigned[k] = true;
+    }
+
+    priority_queue<pair<double, pair<int, int>>> pq; // {w[i], {i, k}}
+    for(int i = 0; i < I; i++){
+        for(int k = 0; k < K; k++){
+            if(!user_assigned[i] && !ris_assigned[k]){
+                double cp_value = w[i] * (prob_en[i][k] * prob_pur[i][k]) / n_pairs[i][k]; //! not sure cp
+                pq.push({cp_value, {i, k}});
+            }
         }
     }
-    cout << "cmp useage " << cmp_useage << endl;
-    cout << "compare obj " << compare_obj << endl;
-    if(compare_obj > cur_obj){
-        // cout << "cur obj " << cur_obj << endl;
-        // cout << "compare obj " << compare_obj << endl;
-        // accept_assign.erase(accept_assign.begin(), accept_assign.end());
-        // accept_assign.push_back(compare_pair);
-        accept_assign.clear();
+
+    while(!pq.empty()){
+        auto [cp_i, pair_ik] = pq.top();
+        pq.pop();
+        auto [i, k] = pair_ik;
+        // check if we can assign user i to RIS k
+        if(cmp_useage + R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]) > R_bs_max){
+            continue;
+        }
+        if(!user_assigned[i] && !ris_assigned[k]){
+            user_assigned[i] = true;
+            ris_assigned[k] = true;
+            cmp_pairs.push_back({i, k});
+            cmp_useage += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+            cmp_obj += w[i] * R_user_max[i];
+        }
+    }
+
+    cout << "cur obj " << cur_obj << " cmp obj " << cmp_obj << endl;
+
+    if(cmp_obj > cur_obj){
+        cout << "cur obj " << cur_obj << endl;
+        cout << "compare obj " << cmp_obj << endl;
         accept_assign = cmp_pairs;
     }
-    return;
+
+    // sort cmp_usage by cp_value = w[i] * (prob_en[i][k] * prob_pur[i][k]) / n_pairs[i][k];
+    // sort(accept_assign.begin(), accept_assign.end(), [](pair<int, int> a, pair<int, int> b){
+    //     auto [i1, k1] = a;
+    //     auto [i2, k2] = b;
+    //     return (w[i1] * (prob_en[i1][k1] * prob_pur[i1][k1]) / n_pairs[i1][k1]) > (w[i2] * (prob_en[i2][k2] * prob_pur[i2][k2]) / n_pairs[i2][k2]);
+    // });
+
+    // try to add more ans from accept_assign
+    // for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
+    //     auto [i, k] = *it;
+    //     // count usage if we add this pair
+    //     cmp_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+    //     if(cmp_useage > R_bs_max){
+    //         cmp_useage -= R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+    //         continue;
+    //     } else {
+    //         cmp_pairs.push_back({i, k});
+    //         compare_obj += w[i] * R_user_max[i];
+    //     }
+    // }
+    // cout << "cmp useage " << cmp_useage << endl;
+    // cout << "compare obj " << compare_obj << endl;
+    // if(compare_obj > cur_obj){
+    //     cout << "cur obj " << cur_obj << endl;
+    //     cout << "compare obj " << compare_obj << endl;
+    //     accept_assign.erase(accept_assign.begin(), accept_assign.end());
+    //     accept_assign.push_back(compare_pair);
+    //     accept_assign.clear();
+    //     accept_assign = cmp_pairs;
+    // }
+    // return;
 
 }
 
@@ -224,26 +322,48 @@ void output_accept(){
     if(!out.is_open()){
         cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
         exit(1);
-    }
-    cout << "accept size " << accept_assign.size() << endl;
+    }    
+    /* Y Label : 
+        Objective
+        Generation Rate
+        Connection Cost
+        # Satisfied UEs
+    */
+    double obj = 0;
+    double total_power = 0;
+    double tmp_power = 0;    
+    double generation_rate = 0;
+    double connection_cost = 0;
+    double satisfied_ues = 0;
     out << "Accepted assignment: " << endl;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        out << "User " << i << " is assigned to RIS " << k << endl;
+        out << "User " << i << " is assigned to RIS " << k;
+        out << " s = " << R_user_max[i] * (n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]));
+        out << " R_user_max " << R_user_max[i] << " prob_en " << prob_en[i][k] << " prob_pur " << prob_pur[i][k];
+        out << " n_pairs " << n_pairs[i][k] << endl;
+        
+        obj += w[i] * R_user_max[i];
+        tmp_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        total_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        generation_rate += R_user_max[i];
+        connection_cost += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        satisfied_ues++;
     }
     out << "Total number of accepted assignment: " << accept_assign.size() << endl;
-    double obj = 0;
-    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
-        auto [i, k] = *it;
-        obj += w[i] * R_user_max[i];
-    }
     out << "Objective value: " << obj << endl;
-    double total_power = 0;
+    out << "Total power usage: " << total_power << endl;
+    out << "Generation rate: " << generation_rate << endl;
+    out << "Connection cost: " << connection_cost << endl;
+    out << "# Satisfied UEs: " << satisfied_ues << endl;
+    
+
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        total_power += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
+        generation_rate += R_user_max[i];
+        connection_cost += n_pairs[i][k];
+        satisfied_ues++;
     }
-    out << "Total power usage: " << total_power << endl;
 }
 
 /* --- input from solver generated file --- */

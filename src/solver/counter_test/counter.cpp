@@ -24,7 +24,6 @@ void input(){
     for(int i=0; i<I; i++) in >> w[i];
     for(int i=0; i<I; i++) in >> V[i];
     for(int i=0; i<I; i++) for(int k=0; k<K; k++) in >> s[i][k];
-    in >> R_bs_max;
     in.close();
 }
 

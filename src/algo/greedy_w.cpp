@@ -24,17 +24,20 @@ void greedy(){
     priority_queue<pair<double, pair<int, int>>> pq; // {w[i], {i, k}}
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            if(!user_assigned[i] && !ris_assigned[k]){
+            if(!user_assigned[i] && !ris_assigned[k] && can_serve.count({k, i}) > 0){
                 pq.push({w[i], {i, k}});
             }
         }
     }
+    cout << "Greedy: " << endl;
+    cout << "Total number of pairs: " << pq.size() << endl;
     while(!pq.empty()){
         auto [w_i, pair_ik] = pq.top();
         pq.pop();
         auto [i, k] = pair_ik;
         // check if we can assign user i to RIS k
         if(can_serve.count({k, i}) == 0){
+            // cout << "User " << i << " cannot be served by RIS " << k << endl;
             continue;
         }
         if(cur_power_used + R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]) > R_bs_max){
@@ -55,29 +58,48 @@ void output_accept(){
     if(!out.is_open()){
         cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
         exit(1);
-    }
+    }    
+    /* Y Label : 
+        Objective
+        Generation Rate
+        Connection Cost
+        # Satisfied UEs
+    */
+    double obj = 0;
+    double total_power = 0;
+    double tmp_power = 0;    
+    double generation_rate = 0;
+    double connection_cost = 0;
+    double satisfied_ues = 0;
     out << "Accepted assignment: " << endl;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        out << "User " << i << " is assigned to RIS " << k << endl;
+        out << "User " << i << " is assigned to RIS " << k;
+        out << " s = " << R_user_max[i] * (n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]));
+        out << " R_user_max " << R_user_max[i] << " prob_en " << prob_en[i][k] << " prob_pur " << prob_pur[i][k];
+        out << " n_pairs " << n_pairs[i][k] << endl;
+        
+        obj += w[i] * R_user_max[i];
+        tmp_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        total_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        generation_rate += R_user_max[i];
+        connection_cost += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        satisfied_ues++;
     }
     out << "Total number of accepted assignment: " << accept_assign.size() << endl;
-    double obj = 0;
-    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
-        auto [i, k] = *it;
-        obj += w[i] * R_user_max[i];
-    }
     out << "Objective value: " << obj << endl;
-    double total_power = 0;
+    out << "Total power usage: " << total_power << endl;
+    out << "Generation rate: " << generation_rate << endl;
+    out << "Connection cost: " << connection_cost << endl;
+    out << "# Satisfied UEs: " << satisfied_ues << endl;
+    
+
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        if(prob_pur[i][k] == 0){
-            cout << "Error: prob_en or prob_pur is 0." << endl;
-            exit(1);
-        }
-        total_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        generation_rate += R_user_max[i];
+        connection_cost += n_pairs[i][k];
+        satisfied_ues++;
     }
-    out << "Total power usage: " << total_power << endl;
 }
 
 

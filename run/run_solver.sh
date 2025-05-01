@@ -3,7 +3,7 @@
 # 檢查是否提供檔案名稱
 if [ $# -lt 1 ]; then
     echo "錯誤：請提供 C++ 檔案名稱！"
-    echo "用法: ./run_solver.sh <source_file.cpp>"
+    echo "用法: ./run_solver.sh <source_file.cpp> [infile.txt] [outfile.txt]"
     exit 1
 fi
 
@@ -41,7 +41,18 @@ $CXX $CXXFLAGS -I $INCLUDE_PATH $SOURCE_FILE -o $OUTPUT_FILE -L $LIB_PATH $LIBS
 # 檢查編譯是否成功
 if [ $? -eq 0 ]; then
     # echo "編譯成功，執行 Solver..."
-    ./$OUTPUT_FILE  # 執行 Solver
+    
+    # 檢查是否有提供輸入和輸出檔案路徑
+    if [ $# -ge 3 ]; then
+        INFILE="$2"
+        OUTFILE="$3"
+        ./$OUTPUT_FILE "$INFILE" "$OUTFILE"
+    elif [ $# -eq 2 ]; then
+        INFILE="$2"
+        ./$OUTPUT_FILE "$INFILE"
+    else
+        ./$OUTPUT_FILE
+    fi
 else
     echo "編譯失敗，請檢查錯誤訊息！"
     exit 1

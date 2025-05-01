@@ -6,7 +6,7 @@
 using namespace std;
 
 /* --- Global Variables --- */
-const int INF = 1e9;
+const long long INF = 1e13;
 int I, K;
 double R_bs_max;
 vector<double> R_user_max, w;

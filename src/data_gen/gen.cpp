@@ -5,6 +5,7 @@
 #include<cmath>
 #include<limits>
 #include"../formula.h"
+#include <stdexcept>
 #define ff first
 #define ss second
 using namespace std;
@@ -138,6 +139,36 @@ bool check_served(double angle_user, double angle_bs, double dis){
     return (angle_user < (M_PI / 2.0) && angle_bs < (M_PI / 2.0) && dis <= 20);
 } 
 
+double generate_price_ratio(std::default_random_engine& rng) {
+    std::normal_distribution<> dist(1.0, 1.5); // 平均值1.0，標準差1.5
+    double val;
+    do {
+        val = dist(rng);
+    } while (val < 1.0 || val > 3.0); // 只取右半部在 [1, 3]
+    return val;
+}
+
+int required_purification_rounds(double F0, double F_th) {
+    if (F0 <= 0.0 || F0 >= 1.0 || F_th <= 0.0 || F_th >= 1.0) {
+        throw std::invalid_argument("F0 and F_th must be in the open interval (0, 1).");
+    }
+
+    double log_F0_ratio = std::log(F0 / (1.0 - F0));
+    double log_Fth_ratio = std::log(F_th / (1.0 - F_th));
+
+    if (log_F0_ratio <= 0.0) {
+        throw std::runtime_error("F0 is too low to reach the threshold through purification.");
+    }
+
+    // Compute the minimum n satisfying the inequality
+    double n_real = log_Fth_ratio / log_F0_ratio - 1.0;
+
+    // Round up to next integer, since n must be an integer
+    int n = static_cast<int>(std::ceil(n_real));
+    return n;
+}
+
+
 int main(int argc, char *argv[]){
     if(argc != 8){
         cout << "Usage: ./gen <datasetfile> <I> <K> <R_bs_max> <fidelity_threshold> <avg_load> <seed>" << endl;
@@ -160,9 +191,9 @@ int main(int argc, char *argv[]){
     random_device rd;
     // default_random_engine gen(rd());
     default_random_engine gen(seed);   // fixed seed for reproducibility
-    uniform_int_distribution<> dist_int(0, 99);
+    uniform_int_distribution<> dist_int(0, 100);
     uniform_real_distribution<> dist_real(0, 100);
-    uniform_real_distribution<> dist_int2(0, 500);
+    uniform_int_distribution<> dist_int2(0, 600);
 
     vector<User> users(I);
     vector<RIS> riss(K);
@@ -172,6 +203,8 @@ int main(int argc, char *argv[]){
     Position bs(0, 0);
 
     out << I << " " << K << " " << R_bs_max << endl;
+    set<pair<double, double>> user_set;
+    set<pair<double, double>> ris_set;
     
     // Generate RIS locations and angles
     for(int k = 0; k < K; k++){
@@ -180,6 +213,7 @@ int main(int argc, char *argv[]){
             uniform_real_distribution<> angle_dist(0, 2 * M_PI);
             double theta = angle_dist(gen);
 
+            // Use uniform distribution for x and y coordinates
             x = dist_int2(gen);
             y = dist_int2(gen);
             riss[k] = RIS(x, y, theta);
@@ -191,11 +225,12 @@ int main(int argc, char *argv[]){
 
             pair<double, double>bs_ris = {bs.x() - riss[k].x(), bs.y() - riss[k].y()};
             riss[k].angle_bs = get_angle(bs_ris, riss[k].vertical);
-        } while(riss[k].angle_bs >= M_PI / 2.0 || (x == 0 && y == 0));
+        } while((riss[k].angle_bs >= (M_PI / 2.0)) || (x == 0 && y == 0) || ris_set.count({x, y}) > 0);
         
         // Calculate distance from RIS to BS
         riss[k].dis_bs = sqrt(pow(riss[k].x(), 2) + pow(riss[k].y(), 2));
         riss[k].dis_user.resize(I);
+        ris_set.insert({x, y});
     }
     
     // Generate user locations
@@ -205,14 +240,15 @@ int main(int argc, char *argv[]){
         
         int x = dist_int2(gen), y = dist_int2(gen);
         bool served = false;
-        while((x == 0 && y == 0) || !served){
+
+        while((x == 0 && y == 0) || !served || user_set.count({x, y}) > 0){
             for(int k = 0; k < K; k++){
                 pair<double, double> u_ris = {x - riss[k].x(), y - riss[k].y()};
-                double dis = sqrt(pow(x - riss[k].x(), 2) + pow(y - riss[k].y(), 2));
+                double dis_user_risk = sqrt(pow(x - riss[k].x(), 2) + pow(y - riss[k].y(), 2));
                 double angle_user = get_angle(u_ris, riss[k].vertical);
-                if(angle_user < (M_PI / 2.0) && dis <= 20){
+                if(check_served(angle_user, riss[k].angle_bs, dis_user_risk)){
                     served = true;
-                    // cout << "User " << i << " is served by RIS " << k << endl;
+                    // cout << "User " << i << " is served by RIS " << k << " dis= " << dis_user_risk << endl;
                     // cout << "User location: (" << x << ", " << y << ")" << endl;
                     // cout << "RIS location: (" << riss[k].x() << ", " << riss[k].y() << ")" << endl;
                     // cout << "Angle: " << angle_user << endl;
@@ -220,10 +256,12 @@ int main(int argc, char *argv[]){
                     break;
                 }
             }
+            if(served) break;
             x = dist_int2(gen);
             y = dist_int2(gen);
         }
         users[i].update(x, y);
+        user_set.insert({x, y});
 
         for(int k = 0; k < K; k++){
             double distance = sqrt(pow(users[i].x() - riss[k].x(), 2) + pow(users[i].y() - riss[k].y(), 2));
@@ -233,13 +271,7 @@ int main(int argc, char *argv[]){
         }
     }
 
-    // Generate random max rates and weights for users
-    for(int i = 0; i < I; i++){
-        uniform_real_distribution<> weight_dist(1, 10);
-        users[i].w = weight_dist(gen);
-        users[i].R_user_max = dist_int(gen);
-        out << users[i].w << ' ' << users[i].R_user_max << "\n";
-    }
+    
     
     // Generate entanglement data
     for(int i = 0; i < I; i++){
@@ -253,7 +285,7 @@ int main(int argc, char *argv[]){
             data_i_k[i][k].fid_pur_times.push_back(data_i_k[i][k].fid_en);
             
             // Try purifying until fidelity exceeds threshold
-            for(int t = 0; t < 20; t++){
+            for(int t = 0; t < 30; t++){
                 if(data_i_k[i][k].fid_pur_times.back() >= fidelity_threshold){
                     users[i].n_pairs[k] = t + 1; // ! we set n_pairs[k] = t + 1
                     break;
@@ -264,6 +296,19 @@ int main(int argc, char *argv[]){
                 data_i_k[i][k].fid_pur_times.push_back(purify_fid);
             }
         }
+    }
+    
+    // Generate random max rates and weights for users
+    for(int i = 0; i < I; i++){
+        double user_bs_dis = sqrt(pow(users[i].x(), 2) + pow(users[i].y(), 2));
+        double user_en_fid = entangle_fidelity(user_bs_dis, beta);
+        double user_bs_purification_times = required_purification_rounds(user_en_fid, fidelity_threshold);
+
+        // mean 2.0, standard deviation 0.5
+        uniform_int_distribution<> user_max_dist(1e4, 2e4);
+        users[i].w = generate_price_ratio(gen) * user_bs_purification_times;
+        users[i].R_user_max = user_max_dist(gen);
+        out << users[i].w << ' ' << users[i].R_user_max << "\n";
     }
 
     // Output entanglement probability data
@@ -283,7 +328,8 @@ int main(int argc, char *argv[]){
             double angle_user = get_angle(u_ris, riss[k].vertical);
             if(check_served(angle_user, riss[k].angle_bs, users[i].dis_ris[k])){
                 riss[k].served_user.push_back(i);
-            }
+                // cout << "User " << i << " is served by RIS " << k << " dis= " << users[i].dis_ris[k] << endl;
+            } 
         }
     }
 
@@ -297,6 +343,15 @@ int main(int argc, char *argv[]){
     }
 
     out.close();
+
+    // print all served user
+    // for(int k=0; k<K; k++){
+    //     cout << "RIS " << k << " can serve user: ";
+    //     for(int i=0; i<riss[k].served_user.size(); i++){
+    //         cout << riss[k].served_user[i] << " ";
+    //     }
+    //     cout << endl;
+    // }
 
     // output location
     string loc_file = "data/output/loc_" + dataset_file;

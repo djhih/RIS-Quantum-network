@@ -55,25 +55,48 @@ void output_accept(){
     if(!out.is_open()){
         cout << "Error: Cannot open file data/output/res_greedy_w.txt" << endl;
         exit(1);
-    }
+    }    
+    /* Y Label : 
+        Objective
+        Generation Rate
+        Connection Cost
+        # Satisfied UEs
+    */
+    double obj = 0;
+    double total_power = 0;
+    double tmp_power = 0;    
+    double generation_rate = 0;
+    double connection_cost = 0;
+    double satisfied_ues = 0;
     out << "Accepted assignment: " << endl;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        out << "User " << i << " is assigned to RIS " << k << endl;
+        out << "User " << i << " is assigned to RIS " << k;
+        out << " s = " << R_user_max[i] * (n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]));
+        out << " R_user_max " << R_user_max[i] << " prob_en " << prob_en[i][k] << " prob_pur " << prob_pur[i][k];
+        out << " n_pairs " << n_pairs[i][k] << endl;
+        
+        obj += w[i] * R_user_max[i];
+        tmp_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        total_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        generation_rate += R_user_max[i];
+        connection_cost += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        satisfied_ues++;
     }
     out << "Total number of accepted assignment: " << accept_assign.size() << endl;
-    double obj = 0;
-    for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
-        auto [i, k] = *it;
-        obj += w[i] * R_user_max[i];
-    }
     out << "Objective value: " << obj << endl;
-    double total_power = 0;
+    out << "Total power usage: " << total_power << endl;
+    out << "Generation rate: " << generation_rate << endl;
+    out << "Connection cost: " << connection_cost << endl;
+    out << "# Satisfied UEs: " << satisfied_ues << endl;
+    
+
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
-        total_power += R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]);
+        generation_rate += R_user_max[i];
+        connection_cost += n_pairs[i][k];
+        satisfied_ues++;
     }
-    out << "Total power usage: " << total_power << endl;
 }
 
 
