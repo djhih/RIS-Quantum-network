@@ -5,10 +5,10 @@ using namespace std;
 int main(){
     string algo_path = "src/algo/";
     string res_path = "data/res/";
-    string name_algo[6] = {"a0", "greedy_w", "greedy_cp", "greedy_obj", "SA_not_random", "ILP"};
+    string name_algo[6] = {"a0", "greedy_cp", "greedy_obj", "SA_not_random", "greedy_w", "ILP"};
     double data[20][20][30][30];
     memset(data, 0, sizeof(data));
-    int test_case = 5, sub_test_case = 5, number_algo = 6, number_graph = 5;
+    int test_case = 5, sub_test_case = 10, number_algo = 4, number_graph = 5;
 
     // i0: algo, i1: dataset, i2: subdataset
     // graph
