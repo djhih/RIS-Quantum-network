@@ -5,6 +5,7 @@
  #include <utility>
  #include <string>
  #include "gurobi_c++.h"
+ #include <chrono>
  #include "../formula.h"          // ← 若不需要可移除
  
  using namespace std;
@@ -211,6 +212,8 @@
  
  /* ---------- main ---------- */
  int main(int argc, char* argv[]) {
+    // start time
+        auto start = chrono::high_resolution_clock::now();
      if (argc != 3) {
          cerr << "Usage : ./solver_bin <datasetfile> <outfile>\n";
          return 1;
@@ -221,5 +224,16 @@
      input_dataset();
      data_process();
      solve_milp();
+     // end time
+        auto end = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+        ofstream log_file("data/res/log.txt", ios::app);
+    if (!log_file.is_open()) {
+        cout << "Error: Cannot open log file" << endl;
+        exit(1);
+    }
+    log_file << "ILP Time taken: " << duration.count() << " ms" << endl;
+    log_file.close();
+        cout << "Total time taken: " << duration.count() << " ms" << endl;
      return 0;
  }

@@ -1,4 +1,5 @@
 #include<iostream>
+#include<chrono>
 #include"../formula.h"
 using namespace std;
 
@@ -202,10 +203,15 @@ void data_process(){
 
             }
         }
+    } else if(rem_pair_x.size() == 1){
+        // cout << "remaining pairs == 1" << endl;
+        compare_pair = {rem_pair_x.begin()->first};
+        // cout << "compare pair " << compare_pair.first << " " << compare_pair.second << endl;
     }
 
     // if remaining pairs == 1, just use the current answer set.
     if(rem_pair_x.empty()){
+        cout << "remaining pairs == 0" << endl;
         return;
     }
     compare_pair = {rem_pair_x.begin()->first};
@@ -217,6 +223,7 @@ void compare(){
     // 2. count compare pair obj value
     // 3. if compare pair > current, then swap
     // 4. else, do nothing
+    // cout << "call comapre " << '\n';
     double cur_obj = 0;
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
@@ -226,6 +233,7 @@ void compare(){
     double cmp_obj = 0;
     auto [i, k] = compare_pair;
     cmp_obj += w[i] * R_user_max[i];
+    // cout << "compare pair " << i << " " << k << endl;
     
     double cmp_useage = 0;
     cmp_useage += R_user_max[i] * n_pairs[i][k] / (prob_en[i][k] * prob_pur[i][k]);
@@ -425,6 +433,8 @@ void input_dataset(){
 }
 
 int main(int argc, char *argv[]){
+    // start time
+    auto start = chrono::high_resolution_clock::now();
     if(argc != 3){
         cout << "Usage: ./greedy_w <datasetfile> <outfile>" << endl;
         exit(1);
@@ -436,5 +446,16 @@ int main(int argc, char *argv[]){
     data_process();
     compare();
     output_accept();
+    // end time in ms
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);   
+    ofstream log_file("data/res/log.txt", ios::app);
+    if (!log_file.is_open()) {
+        cout << "Error: Cannot open log file" << endl;
+        exit(1);
+    }
+    log_file << "a0 Time taken: " << duration.count() << " ms" << endl;
+    log_file.close();
+    cout << "Time taken: " << duration.count() << " ms" << endl;
     return 0;
 }

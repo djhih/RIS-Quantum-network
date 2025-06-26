@@ -1,4 +1,5 @@
 #include<iostream>
+#include<chrono>
 #include"../formula.h"
 using namespace std;
 
@@ -25,6 +26,7 @@ void greedy(){
     priority_queue<pair<double, pair<int, int>>> pq; // {w[i], {i, k}}
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
+            // 這邊if是多餘的
             if(!user_assigned[i] && !ris_assigned[k]){
                 double cp_value = w[i] * (prob_en[i][k] * prob_pur[i][k]) / n_pairs[i][k]; //! not sure cp
                 pq.push({cp_value, {i, k}});
@@ -36,6 +38,9 @@ void greedy(){
         pq.pop();
         auto [i, k] = pair_ik;
         // check if we can assign user i to RIS k
+        if(can_serve.count({k, i}) == 0){
+            continue;
+        }
         if(cur_power_used + R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]) > R_bs_max){
             continue;
         }
@@ -89,7 +94,7 @@ void output_accept(){
     out << "Connection cost: " << connection_cost << endl;
     out << "# Satisfied UEs: " << satisfied_ues << endl;
     
-
+    // 這是要幹嘛?
     for(auto it = accept_assign.begin(); it != accept_assign.end(); it++){
         auto [i, k] = *it;
         generation_rate += R_user_max[i];
@@ -144,6 +149,8 @@ void input_dataset(){
 }
 
 int main(int argc, char *argv[]){
+    // start time
+    auto start = chrono::high_resolution_clock::now();
     if(argc != 3){
         cout << "Usage: ./greedy_cp <infile> <outfile>" << endl;
         exit(1);
@@ -153,5 +160,16 @@ int main(int argc, char *argv[]){
     input_dataset();
     greedy();
     output_accept();
+    // end time in ms
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+    ofstream log_file("data/res/log.txt", ios::app);
+    if (!log_file.is_open()) {
+        cout << "Error: Cannot open log file" << endl;
+        exit(1);
+    }
+    log_file << "CP Time taken: " << duration.count() << " ms" << endl;
+    log_file.close();
+    cout << "Time taken: " << duration.count() << " ms" << endl;
     return 0;
 }

@@ -124,17 +124,19 @@ int main(){
     string genexe = "src/data_gen/bin/gen.exe";
     data_generator gen(genfile, genexe, dataset_file);
 
-    int I = 100, K = 10, R_bs_max = 1e6;
+    int I = 50, K = 15, R_bs_max = 1e7;
     double fidelity_threshold = 0.85, avg_load = 1;
     int seed = 0;
 
-    // Run algorithms
+    // Run algorithmscd 
     for(int i=1; i<=5; i++){
         // Modify parameter for dataset
-        I = i * 50 + 50;
-        for(int j=1; j<=10; j++){
+        I = (i-1) * 10 + 30;
+        if(i == 6) I = 30;
+        for(int j=1; j<=200; j++){
             seed = 0 + j;
             // seed = j-1;
+            // seed = pow(2, j)+1;
             string cur_dataset = gen_data_path + "dataset_" + to_string(i) + "_" + to_string(j) + ".txt";
             gen.dataset_file = cur_dataset;
             
@@ -144,13 +146,13 @@ int main(){
             }
             
             // Run algorithms
-            for(int k=0; k<4; k++){
+            for(int k=0; k<6; k++){
                 if(k == 0){
                     string tmp = "./run/run_solver.sh src/algo/exp_solver.cpp " + cur_dataset + " data/res/res_solver.txt";
                     system(tmp.c_str());
                 }
                 if(k == 5){
-                    continue;
+                    // continue;
                     cout << "run ILP" << endl;
                     string tmp = "./run/run_solver.sh src/algo/ILP.cpp " + cur_dataset + " " + res_path + "ILP_" + to_string(i) + "_" + to_string(j) + ".txt";
                     system(tmp.c_str());
@@ -161,6 +163,7 @@ int main(){
 
                 if (!algo[k].run()) {
                     cerr << "Algorithm " << algo[k].name << " execution failed, continuing to next algorithm" << endl;
+                    break;
                 }
             }
         }

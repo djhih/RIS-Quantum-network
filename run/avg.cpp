@@ -5,10 +5,12 @@ using namespace std;
 int main(){
     string algo_path = "src/algo/";
     string res_path = "data/res/";
-    string name_algo[6] = {"a0", "greedy_cp", "greedy_obj", "SA_not_random", "greedy_w", "ILP"};
-    double data[20][20][30][30];
-    memset(data, 0, sizeof(data));
-    int test_case = 5, sub_test_case = 10, number_algo = 4, number_graph = 5;
+    string name_algo[6] = {"a0", "greedy_cp", "greedy_obj", "SA_not_random", "ILP", "greedy_w"};
+    // double data[20][20][30][30];
+    // memset(data, 0, sizeof(data));
+    int test_case = 5, sub_test_case = 200, number_algo = 6, number_graph = 5;
+
+    vector<vector<vector<vector<double>>>> data(number_graph, vector<vector<vector<double>>>(number_algo, vector<vector<double>>(test_case+1, vector<double>(sub_test_case+1, 0))));
 
     // i0: algo, i1: dataset, i2: subdataset
     // graph
@@ -16,15 +18,14 @@ int main(){
     for(int g=0; g<number_graph; g++){
         for(int i0=0; i0<number_algo; i0++){
             for(int i=1; i<=test_case; i++){
-                int tot = sub_test_case;
                 for(int j=1; j<=sub_test_case; j++){
+                    // if( j < 90 && j > 50) continue;
                     ifstream in;
                     string filename = res_path + name_algo[i0] + "_" + to_string(i) + "_" + to_string(j) + ".txt";
                     in.open(filename);
                     if(!in.is_open()){
-                        cout << "Error: Cannot open file " << filename << endl;
+                        // cout << "Error: Cannot open file " << filename << endl;
                         data[g][i0][i][j] = -1;
-                        tot--;
                         continue;
                     }
 
@@ -42,8 +43,8 @@ int main(){
                             data[g][i0][i][j] = obj;
                         }
                     }
-                    if((i0==0 || i0==5) && i==2 && g==0)
-                    cout << "open file: " << filename << " " << target[g] << obj << endl;
+                    // if((i0==0 || i0==2) && i==1 && g==1)
+                    // cout << "open file: " << filename << " " << target[g] << obj << endl;
                     in.close();
                 }
             }
@@ -51,14 +52,13 @@ int main(){
     }
     
 
-    vector<vector<vector<double>>> avg_obj(20, vector<vector<double>>(20, vector<double>(30, 0)));
+    vector<vector<vector<double>>> avg_obj(number_graph, vector<vector<double>>(number_algo, vector<double>(test_case+1, 0)));
     // count avg
     for(int g=0; g<number_graph; g++){
         for(int i=1; i<=test_case; i++){
-            // 記錄哪些子測試案例至少有一個演算法有有效資料
             vector<bool> valid_test(sub_test_case+1, false);
             
-            // 檢查每個子測試案例是否有任何一個演算法有無效資料
+            // 檢查每個子測資是否有任何一個演算法有無效資料
             for(int j=1; j<=sub_test_case; j++){
                 bool any_valid = true;
                 for(int k=0; k<number_algo; k++){
@@ -69,7 +69,7 @@ int main(){
                 }
                 valid_test[j] = any_valid;
                 if(g == 0 && !any_valid){
-                    cout << "not ok on " << g << " " << i << " " << j << endl;
+                    // cout << "not ok on " << g << " " << i << " " << j << endl;
                 }
             }
             
@@ -88,12 +88,13 @@ int main(){
             // 計算平均值，避免除以零
             if(valid_count > 0){
                 for(int k=0; k<number_algo; k++){
-                    if(g == 0)
-                        cout << "Algorithm: " << name_algo[k] << " i " << i << " cnt " << valid_count << endl;
+                    // if(g == 0)
+                        // cout << "Algorithm: " << name_algo[k] << " i " << i << " cnt " << valid_count << endl;
                     avg_obj[g][k][i] /= valid_count;
+                    // cout << "Algorithm: " << name_algo[k] << " i " << i << " cnt " << valid_count;
+                    // cout << " avg_obj: " << avg_obj[g][k][i] << endl;
                 }
             } else {
-                // 如果所有子測試案例都無效，輸出警告
                 if(g == 0)
                     cout << "Warning: No valid data for test case " << i << endl;
             }

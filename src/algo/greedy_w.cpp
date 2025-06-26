@@ -1,3 +1,4 @@
+// greedy weight*R_user_nax first then greedy size
 #include<iostream>
 #include"../formula.h"
 using namespace std;
@@ -16,28 +17,37 @@ map<pair<int, int>, int> can_serve; // serve_map[k, i] = 1: k can serve to i
 string infile = "data/raw/dataset.txt";
 string outfile = "data/res/res_greedy_w.txt";
 
+struct UE_RIS {
+    int i, k;
+    double w, r, s;
+    UE_RIS(int i, int k, double w, double r, double s) : i(i), k(k), w(w), r(r), s(s) {}
+    bool operator<(const UE_RIS& other) const {
+        if (w * r == other.w * r) {
+            return s > other.s; // Choose the smaller s
+        }
+        return w < other.w; // Choose the max w * r
+    }
+};
+
 /* --- greedy --- */
-// greedy using w[i]
+// greedy using obj
 void greedy(){
     vector<bool> user_assigned(I, false);
     vector<bool> ris_assigned(K, false);
-    priority_queue<pair<double, pair<int, int>>> pq; // {w[i], {i, k}}
+    priority_queue<UE_RIS> pq; // {w[i], {i, k}}
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            if(!user_assigned[i] && !ris_assigned[k] && can_serve.count({k, i}) > 0){
-                pq.push({w[i], {i, k}});
+            if(!user_assigned[i] && !ris_assigned[k]){
+                pq.push({i, k, w[i], R_user_max[i],
+                        R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k])});
             }
         }
     }
-    cout << "Greedy: " << endl;
-    cout << "Total number of pairs: " << pq.size() << endl;
     while(!pq.empty()){
-        auto [w_i, pair_ik] = pq.top();
+        auto [i, k, w_i, r_i, s_i] = pq.top();
         pq.pop();
-        auto [i, k] = pair_ik;
         // check if we can assign user i to RIS k
         if(can_serve.count({k, i}) == 0){
-            // cout << "User " << i << " cannot be served by RIS " << k << endl;
             continue;
         }
         if(cur_power_used + R_user_max[i] * (n_pairs[i][k]) / (prob_en[i][k] * prob_pur[i][k]) > R_bs_max){

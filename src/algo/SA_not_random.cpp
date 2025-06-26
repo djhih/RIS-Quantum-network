@@ -8,6 +8,7 @@
 #include <random>
 #include <fstream>
 #include"../formula.h"
+#include <chrono>
 using namespace std;
 
 /* --- Global Variables --- */
@@ -519,6 +520,8 @@ void input_dataset(){
 
 int main(int argc, char *argv[])
 {
+    // start time
+    auto start = chrono::high_resolution_clock::now();
     if(argc != 3){
         cout << "Usage: ./SA_not_random <infile> <outfile>" << endl;
         exit(1);
@@ -528,5 +531,16 @@ int main(int argc, char *argv[])
     input_dataset();
     SA();
     output_accept();
+    // end time
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+    ofstream log_file("data/res/log.txt", ios::app);
+    if (!log_file.is_open()) {
+        cout << "Error: Cannot open log file" << endl;
+        exit(1);
+    }
+    log_file << "SA Time taken: " << duration.count() << " ms" << endl;
+    log_file.close();
+    cout << "Time taken: " << duration.count() << " ms" << endl;
     return 0;
 }

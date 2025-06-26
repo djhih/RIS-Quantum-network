@@ -99,9 +99,11 @@ double solveRelaxedProblem() {
             for (int k = 0; k < K; ++k) {
                 x[i][k] = x_vars[i][k].get(GRB_DoubleAttr_X);
                 R[i][k] = s[i][k]* x_vars[i][k].get(GRB_DoubleAttr_X);
-                if(x[i][k] > 0.0001){
+
+                if(x[i][k] > 0.00001){
                     cout << "x[" << i << "][" << k << "]: " << x[i][k] << ' ';
-                    cout << "R_bs for user " << i << " - RIS " << k << " : " << R[i][k] << endl;
+                    cout << "value "<<V[i]<<" size "<<s[i][k]<<" ";
+                    cout << "R_bs for user " << i << " - RIS " << k << " : " << R[i][k] << " value : "<< (V[i] * x[i][k])<< endl;
                 }
                 // cout << "x " << i << "  " << k << ": " << x[i][k] << ' ';
                 // cout << "R " << i << "  " << k << ": " << R[i][k] << ' ';

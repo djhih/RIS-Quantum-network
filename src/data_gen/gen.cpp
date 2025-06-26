@@ -70,6 +70,7 @@ int K = 10; // number of RISs
 const double beta = 0.00438471;
 double R_bs_max = 100; // max rate of BS
 double fidelity_threshold = 0.85;
+vector<double> fid_threshold_array;
 
 struct purify_table {
     double dis;
@@ -104,10 +105,10 @@ public:
     RIS() : Position(), theta(0.0), dis_bs(0.0) {}
     RIS(double x, double y, double t) : Position(x, y), theta(t), dis_bs(0.0) {}
 
-    double theta;
-    double dis_bs;
-    double angle_bs;
-    double angle_user;
+    double theta; // angle of vertial and x-axis
+    double dis_bs; // distance from RIS to BS
+    double angle_bs; // angle between BS, vertical
+    double angle_user; // angle between user, vertical
     vector<double> n_pairs;
     vector<double> dis_user;
     vector<int> served_user;
@@ -172,7 +173,7 @@ int required_purification_rounds(double F0, double F_th) {
 
 int main(int argc, char *argv[]){
     if(argc != 8){
-        cout << "Usage: ./gen <datasetfile> <I> <K> <R_bs_max> <fidelity_threshold> <avg_load> <seed>" << endl;
+        cout << "Usage: ./gen <datasetfile> <I> <K> <R_bs_max> <fid_threshold_array[i]> <avg_load> <seed>" << endl;
         exit(1);
     }
     string dataset_file = argv[1];
@@ -192,9 +193,9 @@ int main(int argc, char *argv[]){
     random_device rd;
     // default_random_engine gen(rd());
     default_random_engine gen(seed);   // fixed seed for reproducibility
-    uniform_int_distribution<> dist_int(0, 100);
-    uniform_real_distribution<> dist_real(0, 100);
-    uniform_int_distribution<> dist_int2(0, 500);
+    // uniform_int_distribution<> dist_int(0, 100);
+    // uniform_real_distribution<> dist_real(0, 100);
+    uniform_int_distribution<> dist_int2(0, 750); // 距離範圍, 0-750m, 750*750
 
     vector<User> users(I);
     vector<RIS> riss(K);
@@ -207,6 +208,13 @@ int main(int argc, char *argv[]){
     set<pair<double, double>> user_set;
     set<pair<double, double>> ris_set;
     
+    // Gen rand fidelity threshold for each user
+    for(int i = 0; i < I; i++){
+        uniform_real_distribution<> fid_gen(0.7, 0.9);
+        double fid_threshold = fid_gen(gen);
+        fid_threshold_array.push_back(fid_threshold);
+    }
+
     // Generate RIS locations and angles
     for(int k = 0; k < K; k++){
         int x = dist_int2(gen), y = dist_int2(gen);
@@ -262,6 +270,7 @@ int main(int argc, char *argv[]){
                 double dis_user_risk = sqrt(pow(x - riss[k].x(), 2) + pow(y - riss[k].y(), 2));
                 double angle_user = get_angle(u_ris, riss[k].vertical);
                 if(check_served(angle_user, riss[k].angle_bs, dis_user_risk)){
+                    // assert(users[i].n_pairs[k] > 0);
                     served = true;
                     // cout << "User " << i << " is served by RIS " << k << " dis= " << dis_user_risk << endl;
                     // cout << "User location: (" << x << ", " << y << ")" << endl;
@@ -304,7 +313,7 @@ int main(int argc, char *argv[]){
             
             // Try purifying until fidelity exceeds threshold
             for(int t = 0; t < 30; t++){
-                if(data_i_k[i][k].fid_pur_times.back() >= fidelity_threshold){
+                if(data_i_k[i][k].fid_pur_times.back() >= fid_threshold_array[i]){
                     users[i].n_pairs[k] = t + 1; // ! we set n_pairs[k] = t + 1
                     break;
                 }
@@ -313,35 +322,63 @@ int main(int argc, char *argv[]){
                 data_i_k[i][k].prob_pur *= purify_success_prob(data_i_k[i][k].fid_pur_times.back(), data_i_k[i][k].fid_en);
                 data_i_k[i][k].fid_pur_times.push_back(purify_fid);
             }
+            // if(data_i_k[i][k].fid_pur_times.back() < fid_threshold_array[i]){
+            //     users[i].n_pairs[k] = 1;
+            //     cout << "Error: user " << i << " cannot purify to threshold " << fid_threshold_array[i] << endl;
+            // }
         }
     }
     
     // Generate random max rates and weights for users
     for(int i = 0; i < I; i++){
-        double user_bs_dis = sqrt(pow(users[i].x(), 2) + pow(users[i].y(), 2));
-        double user_en_fid = entangle_fidelity(user_bs_dis, beta);
-        double user_bs_purification_times = required_purification_rounds(user_en_fid, fidelity_threshold);
+        // find the cloest RIS
+        double min_dis = numeric_limits<double>::max(), min_dis_ris = -1;
+        for(int k = 0; k < K; k++){
+            if(users[i].dis_ris[k] < min_dis){
+                min_dis = users[i].dis_ris[k];
+                min_dis_ris = k;
+            }
+        }
+        // double user_bs_dis = sqrt(pow(users[i].x(), 2) + pow(users[i].y(), 2));
+        double user_en_fid = entangle_fidelity(min_dis, beta);
+        double user_bs_purification_times = required_purification_rounds(user_en_fid, fid_threshold_array[i]);
 
-        // mean 2.0, standard deviation 0.5
         uniform_int_distribution<> user_max_dist(1e5, 2e5);
-        users[i].w = generate_price_ratio(gen) * (user_bs_purification_times + 1);
+        // users[i].w = generate_price_ratio(gen) * (user_bs_purification_times + 1);
+
+        //!
+        users[i].w = generate_price_ratio(gen);
+
         if(users[i].w == 0){
             cout << "Error: user " << i << " weight is 0" << endl;
-            cout << "user_bs_dis: " << user_bs_dis << " user_en_fid: " << user_en_fid << endl;
+            cout << "user_bs_dis: " << min_dis << " user_en_fid: " << user_en_fid << endl;
             cout << "user_loc: " << users[i].x() << " " << users[i].y() << endl;
             cout << "user_bs_purification_times: " << user_bs_purification_times << endl;
             cout << "user_max_dist: " << users[i].w << endl;
             exit(1);
         }
         users[i].R_user_max = user_max_dist(gen);
+
+        // constraint user max rate * (prob_en * prob_pur) / n_pairs <= R_bs_max
+        // if bigger, set to R_bs_max
+        // for(int k = 0; k < K; k++){
+        //     if((R_bs_max * ((data_i_k[i][k].prob_en * data_i_k[i][k].prob_pur) / users[i].n_pairs[k])) < users[i].R_user_max){
+        //         cout << "user " << i << " max rate is too big " << users[i].R_user_max << " set to " << R_bs_max * ((data_i_k[i][k].prob_en * data_i_k[i][k].prob_pur) / users[i].n_pairs[k]) << endl;
+        //         users[i].R_user_max = R_bs_max * ((data_i_k[i][k].prob_en * data_i_k[i][k].prob_pur) / users[i].n_pairs[k]);
+        //     } 
+        // }
+
         out << users[i].w << ' ' << users[i].R_user_max << "\n";
     }
 
     // Output entanglement probability data
     for(int i = 0; i < I; i++){
         for(int k = 0; k < K; k++){
-            if(data_i_k[i][k].fid_en > fidelity_threshold && data_i_k[i][k].prob_pur == 0){
+            if(data_i_k[i][k].fid_en > fid_threshold_array[i] && data_i_k[i][k].prob_pur == 0){
                 data_i_k[i][k].prob_pur = 1; // ! if not purified, set prob_pur to 1
+            }
+            if(users[i].n_pairs[k] == 0){
+                cout << "Error: user " << i << " cannot purify to threshold " << fid_threshold_array[i] << endl;
             }
             out << data_i_k[i][k].prob_en << " " << data_i_k[i][k].prob_pur << " " << users[i].n_pairs[k] << "\n";
         }
@@ -352,7 +389,7 @@ int main(int argc, char *argv[]){
             // get angle between user and RIS
             pair<double, double> u_ris = {users[i].x() - riss[k].x(), users[i].y() - riss[k].y()};
             double angle_user = get_angle(u_ris, riss[k].vertical);
-            if(check_served(angle_user, riss[k].angle_bs, users[i].dis_ris[k])){
+            if(check_served(angle_user, riss[k].angle_bs, users[i].dis_ris[k]) && users[i].n_pairs[k] > 0){
                 riss[k].served_user.push_back(i);
                 // cout << "User " << i << " is served by RIS " << k << " dis= " << users[i].dis_ris[k] << endl;
             } 

@@ -1,6 +1,18 @@
 {
     "files.associations": {
         "random": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "chrono": "cpp",
+        "iosfwd": "cpp",
+        "iostream": "cpp",
+        "array": "cpp",
+        "memory": "cpp",
+        "future": "cpp",
+        "istream": "cpp",
+        "ranges": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "utility": "cpp",
+        "variant": "cpp"
     }
 }

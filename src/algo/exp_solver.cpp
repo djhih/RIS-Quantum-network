@@ -194,6 +194,20 @@ int main(int argc, char *argv[]){
     infile = argv[1];
     outfile = argv[2];
     input_dataset();
+    // start time
+    auto start = chrono::high_resolution_clock::now();
     data_process();
     solver();
+    // end time ms
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
+    // open and append to log file
+    ofstream log_file("data/res/log.txt", ios::app);
+    if (!log_file.is_open()) {
+        cout << "Error: Cannot open log file" << endl;
+        exit(1);
+    }
+    log_file << "Exp Time taken: " << duration.count() << " ms" << endl;
+    log_file.close();
+    cout << "Time taken: " << duration.count() << " ms" << endl;
 }
